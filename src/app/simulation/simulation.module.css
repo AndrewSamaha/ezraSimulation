@@ -4,7 +4,6 @@
   background-color: #000912; /* Dark blue background */
   position: relative;
   overflow: hidden;
-  cursor: pointer;
 }
 
 .circle {
@@ -56,4 +55,30 @@
 
 .controlButton:disabled {
   opacity: 0.4;
+}
+
+.stepInfo {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  color: white;
+  font-size: 14px;
+  background-color: rgba(0, 0, 0, 0.7);
+  padding: 8px 16px;
+  border-radius: 4px;
+}
+
+.objectAnnotation {
+  position: absolute;
+  transform: translateX(-50%);
+  color: white;
+  font-size: 12px;
+  background-color: rgba(0, 0, 0, 0.7);
+  padding: 4px 8px;
+  border-radius: 4px;
+  text-align: center;
+  z-index: 5;
+  pointer-events: none;
+  width: auto;
+  white-space: nowrap;
 }

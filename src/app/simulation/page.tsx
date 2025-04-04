@@ -1,142 +1,108 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import styles from './simulation.module.css';
 import { Button } from '@/components/ui/button';
 import { Play, Pause, RotateCcw } from 'lucide-react';
+import { useSimulation, SimulationObject } from '@/context/SimulationContext';
 
 export default function SimulationPage() {
-  const [position, setPosition] = useState({ x: 100, y: 100 });
-  const [isRunning, setIsRunning] = useState(false);
-  const [velocity, setVelocity] = useState({ x: 0, y: 0 });
+  const { state, dispatch } = useSimulation();
   const containerRef = useRef<HTMLDivElement>(null);
-  const animationRef = useRef<number | undefined>(undefined);
+  const intervalRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
-  // Handle click to move the circle
-  const handleClick = (e: React.MouseEvent) => {
-    // if (containerRef.current && !isRunning) {
-    //   const rect = containerRef.current.getBoundingClientRect();
-    //   setPosition({
-    //     x: e.clientX - rect.left,
-    //     y: e.clientY - rect.top
-    //   });
-    // }
-  };
+  // No click handling as per requirements
 
   // Start the simulation
   const startSimulation = () => {
-    if (!isRunning) {
-      setIsRunning(true);
-      setVelocity({ x: 2, y: 1 });
-      animationRef.current = requestAnimationFrame(updateSimulation);
+    if (!state.isRunning) {
+      dispatch({ type: 'START_SIMULATION' });
+      
+      // Set velocity for the circle
+      const mainCircle = state.steps[state.currentStep].objects.find(obj => obj.id === 'circle-1');
+      if (mainCircle) {
+        // No need to modify anything here now that the simulation works with velocity vectors
+        const updatedCircle: SimulationObject = {
+          ...mainCircle
+        };
+        dispatch({ type: 'UPDATE_OBJECT', payload: updatedCircle });
+      }
+      
+      // Start interval to advance simulation steps
+      intervalRef.current = setInterval(() => {
+        dispatch({ type: 'NEXT_STEP' });
+      }, state.speed);
     }
   };
 
   // Pause the simulation
   const pauseSimulation = () => {
-    if (isRunning) {
-      setIsRunning(false);
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
+    if (state.isRunning) {
+      dispatch({ type: 'PAUSE_SIMULATION' });
+      
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = undefined;
       }
     }
   };
 
   // Reset the simulation
   const resetSimulation = () => {
-    setIsRunning(false);
-    setPosition({ x: 100, y: 100 });
-    setVelocity({ x: 0, y: 0 });
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = undefined;
     }
-  };
-
-  // Update simulation frame
-  const updateSimulation = () => {
-    setPosition(prev => {
-      const newX = prev.x + velocity.x;
-      const newY = prev.y + velocity.y;
-      
-      // Check for collisions with container bounds
-      let newVelX = velocity.x;
-      let newVelY = velocity.y;
-      
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        const circleRadius = 25; // Half of the circle width
-        
-        if (newX - circleRadius <= 0 || newX + circleRadius >= rect.width) {
-          newVelX = -newVelX;
-        }
-        
-        if (newY - circleRadius <= 0 || newY + circleRadius >= rect.height) {
-          newVelY = -newVelY;
-        }
-      }
-      
-      setVelocity({ x: newVelX, y: newVelY });
-      
-      return {
-        x: newX,
-        y: newY
-      };
-    });
     
-    if (isRunning) {
-      animationRef.current = requestAnimationFrame(updateSimulation);
-    }
+    dispatch({ type: 'RESET_SIMULATION' });
   };
 
-  // Handle keyboard movement
+  // Cleanup on unmount
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!isRunning) {
-        setPosition(prev => {
-          const step = 10;
-          switch (e.key) {
-            case 'ArrowUp':
-              return { ...prev, y: Math.max(0, prev.y - step) };
-            case 'ArrowDown':
-              return { ...prev, y: prev.y + step };
-            case 'ArrowLeft':
-              return { ...prev, x: Math.max(0, prev.x - step) };
-            case 'ArrowRight':
-              return { ...prev, x: prev.x + step };
-            default:
-              return prev;
-          }
-        });
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      // Clean up animation frame on unmount
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
+      // Clean up interval on unmount
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
       }
     };
-  }, [isRunning]);
+  }, []);
 
   return (
     <div 
       ref={containerRef}
-      className={styles.simulationContainer} 
-      onClick={handleClick}
+      className={styles.simulationContainer}
     >
-      <div 
-        className={styles.circle}
-        style={{ 
-          left: `${position.x}px`, 
-          top: `${position.y}px` 
-        }}
-      />
+      {/* Render all objects in the current simulation step */}
+      {state.steps[state.currentStep].objects.map(obj => (
+        <div key={obj.id}>
+          <div 
+            className={styles.circle}
+            style={{ 
+              left: `${obj.vector.x}px`, 
+              top: `${obj.vector.y}px`,
+              backgroundColor: obj.color || 'green',
+              width: `${obj.size || 50}px`,
+              height: `${obj.size || 50}px`
+            }}
+          />
+          <div 
+            className={styles.objectAnnotation}
+            style={{ 
+              left: `${obj.vector.x}px`, 
+              top: `${obj.vector.y + (obj.size || 50) + 5}px`
+            }}
+          >
+            <div>Position: ({Math.round(obj.vector.x)}, {Math.round(obj.vector.y)})</div>
+            <div>Direction: {Math.round(obj.velocity.angle() * (180/Math.PI))}°</div>
+            <div>Speed: {Math.round(obj.velocity.length() * 100) / 100}</div>
+          </div>
+        </div>
+      ))}
+      
       <div className={styles.controlPanel}>
         <Button 
           onClick={startSimulation} 
-          disabled={isRunning}
+          disabled={state.isRunning}
           className={styles.controlButton}
           variant="outline"
           size="icon"
@@ -145,7 +111,7 @@ export default function SimulationPage() {
         </Button>
         <Button 
           onClick={pauseSimulation} 
-          disabled={!isRunning}
+          disabled={!state.isRunning}
           className={styles.controlButton}
           variant="outline"
           size="icon"
@@ -161,10 +127,15 @@ export default function SimulationPage() {
           <RotateCcw className="h-4 w-4" />
         </Button>
       </div>
+      
       <div className={styles.instructions}>
-        {isRunning 
+        {state.isRunning 
           ? 'Simulation running - use controls to pause or reset' 
-          : 'Click anywhere to position the circle or use arrow keys'}
+          : 'Use the controls to start, pause, or reset the simulation'}
+      </div>
+      
+      <div className={styles.stepInfo}>
+        Step: {state.currentStep} / {state.steps.length - 1}
       </div>
     </div>
   );
