@@ -4,7 +4,7 @@ import React, { createContext, useContext, useReducer, ReactNode } from 'react';
 import Victor from 'victor';
 
 // Create an enum from the ObjectTypes
-enum ObjectTypeEnum {
+export enum ObjectTypeEnum {
   ANIMAL = 'animal',
   PLANT = 'plant'
 }
