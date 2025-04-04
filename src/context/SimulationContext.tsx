@@ -3,9 +3,22 @@
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
 import Victor from 'victor';
 
+// Create an enum from the ObjectTypes
+enum ObjectTypeEnum {
+  ANIMAL = 'animal',
+  PLANT = 'plant'
+}
+
+// Define object types as an array of strings
+const ObjectTypes = [ObjectTypeEnum.ANIMAL, ObjectTypeEnum.PLANT] as const;
+
+// Create a TypeScript type from the ObjectTypes array
+type ObjectType = typeof ObjectTypes[number];
+
 // Define the shape of a simulation object
 export interface SimulationObject {
   id: string;
+  objectType: ObjectType;  // Required field for object type
   color?: string;
   size?: number;
   vector: Victor;    // Position vector
@@ -47,6 +60,7 @@ const initialState: SimulationState = {
       objects: [
         {
           id: 'circle-1',
+          objectType: ObjectTypeEnum.PLANT,            // Using one of the defined object types
           color: 'green',
           size: 25,
           vector: new Victor(100, 100),   // Initial position
