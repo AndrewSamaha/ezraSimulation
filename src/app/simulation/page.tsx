@@ -3,7 +3,8 @@
 import { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Play, Pause, RotateCcw } from 'lucide-react';
-import { useSimulation, SimulationObject, ObjectTypeEnum } from '@/context/SimulationContext';
+import { useSimulation, SimulationObject as SimObj } from '@/context/SimulationContext';
+import { SimulationObject } from '@/components/SimulationObject';
 
 export default function SimulationPage() {
   const { state, dispatch } = useSimulation();
@@ -21,7 +22,7 @@ export default function SimulationPage() {
       const mainCircle = state.steps[state.currentStep].objects.find(obj => obj.id === 'circle-1');
       if (mainCircle) {
         // No need to modify anything here now that the simulation works with velocity vectors
-        const updatedCircle: SimulationObject = {
+        const updatedCircle: SimObj = {
           ...mainCircle
         };
         dispatch({ type: 'UPDATE_OBJECT', payload: updatedCircle });
@@ -73,30 +74,7 @@ export default function SimulationPage() {
     >
       {/* Render all objects in the current simulation step */}
       {state.steps[state.currentStep].objects.map(obj => (
-        <div key={obj.id}>
-          <div 
-            className={`absolute rounded-full transform -translate-x-1/2 -translate-y-1/2 transition-all duration-200 ease-out
-              ${obj.objectType === ObjectTypeEnum.ANIMAL ? 'bg-red-500 border-2 border-red-500 shadow-animal' : 'bg-green-500 border-2 border-green-500 shadow-plant'}`}
-            style={{ 
-              left: `${obj.vector.x}px`, 
-              top: `${obj.vector.y}px`,
-              width: `${obj.size || 50}px`,
-              height: `${obj.size || 50}px`
-            }}
-          />
-          <div 
-            className="absolute transform -translate-x-1/2 text-white text-xs bg-black/70 p-1 px-2 rounded text-center z-5 pointer-events-none whitespace-nowrap"
-            style={{ 
-              left: `${obj.vector.x}px`, 
-              top: `${obj.vector.y + (obj.size || 50) + 5}px`
-            }}
-          >
-            <div>Type: {obj.objectType}</div>
-            <div>Position: ({Math.round(obj.vector.x)}, {Math.round(obj.vector.y)})</div>
-            <div>Direction: {Math.round(obj.velocity.angle() * (180/Math.PI))}°</div>
-            <div>Speed: {Math.round(obj.velocity.length() * 100) / 100}</div>
-          </div>
-        </div>
+        <SimulationObject key={obj.id} object={obj} />
       ))}
       
       <div className="absolute top-5 left-1/2 transform -translate-x-1/2 flex gap-2.5 bg-black/40 p-2 px-4 rounded z-10">

@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
 import Victor from 'victor';
+import { calculateNextStep } from '@/lib/simulation/main';
 
 // Create an enum from the ObjectTypes
 export enum ObjectTypeEnum {
@@ -21,6 +22,7 @@ export interface SimulationObject {
   objectType: ObjectType;  // Required field for object type
   color?: string;
   size?: number;
+  age: number;
   vector: Victor;    // Position vector
   velocity: Victor;  // Velocity vector (heading and speed)
 }
@@ -63,7 +65,17 @@ const initialState: SimulationState = {
           objectType: ObjectTypeEnum.PLANT,            // Using one of the defined object types
           color: 'green',
           size: 25,
+          age: 0,
           vector: new Victor(100, 100),   // Initial position
+          velocity: new Victor(0, 0)      // Initial velocity
+        },
+        {
+          id: 'circle-2',
+          objectType: ObjectTypeEnum.ANIMAL,            // Using one of the defined object types
+          color: 'red',
+          size: 25,
+          age: 0,
+          vector: new Victor(200, 200),   // Initial position
           velocity: new Victor(2, 1)      // Initial velocity
         }
       ]
@@ -88,52 +100,9 @@ function simulationReducer(state: SimulationState, action: SimulationAction): Si
     case 'NEXT_STEP': {
       // If we're at the last known step, we need to calculate the next step
       if (state.currentStep >= state.steps.length - 1) {
-        // Calculate new positions based on vector movement and collisions
+        // Calculate new positions based on vector movement and collisions using our extracted physics logic
         const currentStep = state.steps[state.currentStep];
-        const newObjects = currentStep.objects.map(obj => {
-          // Clone the current position and velocity vectors to work with
-          const position = obj.vector.clone();
-          const velocity = obj.velocity.clone();
-          
-          // Apply forces here if needed (e.g., gravity, acceleration)
-          // const forces = new Victor(0, 0.1); // Example gravity
-          // velocity.add(forces); // Add forces to velocity
-          
-          // Apply movement: add velocity to position
-          position.add(velocity);
-          
-          // Simple collision detection with boundaries (assuming container is 800x600)
-          const containerWidth = 800;
-          const containerHeight = 600;
-          const radius = (obj.size || 50) / 2;
-          
-          // Check for boundary collisions and adjust velocity
-          if (position.x - radius <= 0) {
-            position.x = radius; // Prevent going out of bounds
-            velocity.invertX(); // Bounce by reversing x velocity
-          } else if (position.x + radius >= containerWidth) {
-            position.x = containerWidth - radius; // Prevent going out of bounds
-            velocity.invertX(); // Bounce by reversing x velocity
-          }
-          
-          if (position.y - radius <= 0) {
-            position.y = radius; // Prevent going out of bounds
-            velocity.invertY(); // Bounce by reversing y velocity
-          } else if (position.y + radius >= containerHeight) {
-            position.y = containerHeight - radius; // Prevent going out of bounds
-            velocity.invertY(); // Bounce by reversing y velocity
-          }
-          
-          return {
-            ...obj,
-            vector: position,    // Update position
-            velocity: velocity   // Update velocity
-          };
-        });
-        
-        const newStep: SimulationStep = {
-          objects: newObjects
-        };
+        const newStep = calculateNextStep(currentStep);
         
         return {
           ...state,
