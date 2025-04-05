@@ -72,9 +72,9 @@ export default function SimulationPage() {
   return (
     <div 
       ref={containerRef}
-      className="w-full h-screen bg-[#000912] relative overflow-hidden flex items-center justify-center"
+      className="w-full h-screen bg-white bg-[url('/lionFace.bg-skinny.png')] bg-contain bg-no-repeat bg-center relative overflow-hidden flex items-center justify-center"
     >
-      <Card className="relative bg-white rounded-lg border border-white/10" 
+      <Card className="relative bg-black rounded-lg border border-white/10" 
         style={{ 
           width: `${CONTAINER_WIDTH}px`, 
           height: `${CONTAINER_HEIGHT}px` 
