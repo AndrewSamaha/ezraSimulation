@@ -5,6 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Play, Pause, RotateCcw } from 'lucide-react';
 import { useSimulation, SimulationObject as SimObj } from '@/context/SimulationContext';
 import { SimulationObject } from '@/components/SimulationObject';
+import { CONTAINER_WIDTH, CONTAINER_HEIGHT } from '@/lib/constants/world';
+import { Card } from '@/components/ui/card';
+import { twMerge } from 'tailwind-merge'
 
 export default function SimulationPage() {
   const { state, dispatch } = useSimulation();
@@ -70,12 +73,17 @@ export default function SimulationPage() {
   return (
     <div 
       ref={containerRef}
-      className="w-full h-screen bg-[#000912] relative overflow-hidden"
+      className="w-full h-screen bg-[#000912] relative overflow-hidden flex items-center justify-center"
     >
-      {/* Render all objects in the current simulation step */}
-      {state.steps[state.currentStep].objects.map(obj => (
-        <SimulationObject key={obj.id} object={obj} />
-      ))}
+      <Card className={twMerge(
+        "relative bg-black/20 rounded-lg border border-white/10",
+        `w-[${CONTAINER_WIDTH}px] h-[${CONTAINER_HEIGHT}px]`
+      )}>
+        {/* Render all objects in the current simulation step */}
+        {state.steps[state.currentStep].objects.map(obj => (
+          <SimulationObject key={obj.id} object={obj} />
+        ))}
+      </Card>
       
       <div className="absolute top-5 left-1/2 transform -translate-x-1/2 flex gap-2.5 bg-black/40 p-2 px-4 rounded z-10">
         <Button 
