@@ -11,8 +11,8 @@ export function Plant({ object: obj }: PlantProps) {
   return (
     <div 
       className="absolute rounded-full transform -translate-x-1/2 -translate-y-1/2 
-        transition-all duration-200 ease-out cursor-pointer bg-green-500 border-2 
-        border-green-500 shadow-plant"
+        transition-all duration-200 ease-out border-opacity-25 cursor-pointer bg-green-500 border-2 
+        border-green-500 shadow-plant "
       style={{ 
         left: `${obj.vector.x}px`, 
         top: `${obj.vector.y}px`,

@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
 import Victor from 'victor';
 import { calculateNextStep } from '@/lib/simulation/main';
+import { createNewPlant } from '@/lib/simulation/behavior/plant';
 
 // Create an enum from the ObjectTypes
 export enum ObjectTypeEnum {
@@ -25,6 +26,8 @@ export interface SimulationObject {
   age: number;
   vector: Victor;    // Position vector
   velocity: Victor;  // Velocity vector (heading and speed)
+  forceInput: Victor; // Force vector (for external forces)
+  parentId: string | null;
 }
 
 // Define the shape of a simulation state at a specific step
@@ -60,15 +63,7 @@ const initialState: SimulationState = {
   steps: [
     {
       objects: [
-        {
-          id: 'circle-1',
-          objectType: ObjectTypeEnum.PLANT,            // Using one of the defined object types
-          color: 'green',
-          size: 25,
-          age: 0,
-          vector: new Victor(100, 100),   // Initial position
-          velocity: new Victor(0, 0)      // Initial velocity
-        },
+        createNewPlant(),
         {
           id: 'circle-2',
           objectType: ObjectTypeEnum.ANIMAL,            // Using one of the defined object types
@@ -76,7 +71,9 @@ const initialState: SimulationState = {
           size: 25,
           age: 0,
           vector: new Victor(200, 200),   // Initial position
-          velocity: new Victor(2, 1)      // Initial velocity
+          velocity: new Victor(2, 1),      // Initial velocity
+          forceInput: new Victor(0, 0),    // Initial force
+          parentId: null
         }
       ]
     }

@@ -1,5 +1,6 @@
 import { SimulationObject } from '@/context/SimulationContext';
-import { CONTAINER_WIDTH, CONTAINER_HEIGHT } from '@/lib/constants/world';
+import { CONTAINER_WIDTH, CONTAINER_HEIGHT, FRICTION } from '@/lib/constants/world';
+import Victor from 'victor';
 
 
 /**
@@ -13,6 +14,11 @@ export function doPhysics(obj: SimulationObject): SimulationObject {
   // Apply forces here if needed (e.g., gravity, acceleration)
   // const forces = new Victor(0, 0.1); // Example gravity
   // velocity.add(forces); // Add forces to velocity
+  // Apply friction
+  velocity.multiply(FRICTION);
+
+  // Apply force input
+  velocity.add(obj.forceInput);
   
   // Apply movement: add velocity to position
   position.add(velocity);
@@ -42,6 +48,7 @@ export function doPhysics(obj: SimulationObject): SimulationObject {
     ...obj,
     age: obj.age + 1,
     vector: position,
-    velocity: velocity
+    velocity: velocity,
+    forceInput: new Victor(0, 0)
   };
 }
