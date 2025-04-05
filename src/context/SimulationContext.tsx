@@ -63,7 +63,7 @@ const initialState: SimulationState = {
   steps: [
     {
       objects: [
-        createNewPlant(),
+        ...Array.from({ length: 5 }, () => createNewPlant()),
         {
           id: 'circle-2',
           objectType: ObjectTypeEnum.ANIMAL,            // Using one of the defined object types

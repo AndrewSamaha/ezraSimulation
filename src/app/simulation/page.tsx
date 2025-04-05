@@ -7,7 +7,6 @@ import { useSimulation, SimulationObject as SimObj } from '@/context/SimulationC
 import { SimulationObject } from '@/components/SimulationObject';
 import { CONTAINER_WIDTH, CONTAINER_HEIGHT } from '@/lib/constants/world';
 import { Card } from '@/components/ui/card';
-import { twMerge } from 'tailwind-merge'
 
 export default function SimulationPage() {
   const { state, dispatch } = useSimulation();
@@ -75,10 +74,12 @@ export default function SimulationPage() {
       ref={containerRef}
       className="w-full h-screen bg-[#000912] relative overflow-hidden flex items-center justify-center"
     >
-      <Card className={twMerge(
-        "relative bg-black/20 rounded-lg border border-white/10",
-        `w-[${CONTAINER_WIDTH}px] h-[${CONTAINER_HEIGHT}px]`
-      )}>
+      <Card className="relative bg-white rounded-lg border border-white/10" 
+        style={{ 
+          width: `${CONTAINER_WIDTH}px`, 
+          height: `${CONTAINER_HEIGHT}px` 
+        }}>
+
         {/* Render all objects in the current simulation step */}
         {state.steps[state.currentStep].objects.map(obj => (
           <SimulationObject key={obj.id} object={obj} />

@@ -65,17 +65,17 @@ export function doPlantThings(
     if (obj.age <= 20) {
       return false;
     }
-    if (Math.random() < 0.75) {
+    if (Math.random() < 0.95) {
       return false;
     }
     return true;
   }
 
   const shouldSurvive = () => {
-    if (obj.age <= 100) {
+    if (obj.age <= 200) {
       return true;
     }
-    if (Math.random() < 0.95) {
+    if (Math.random() < 0.995) {
       return true;
     }
 

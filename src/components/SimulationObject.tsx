@@ -26,6 +26,11 @@ export function SimulationObject({ object: obj }: SimulationObjectProps) {
 
   return (
     <div
+      className="absolute" 
+      style={{ 
+        left: `${obj.vector.x}px`, 
+        top: `${obj.vector.y}px`,
+      }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -37,8 +42,8 @@ export function SimulationObject({ object: obj }: SimulationObjectProps) {
         <div 
           className="absolute transform -translate-x-1/2 text-white text-xs bg-black/70 p-1 px-2 rounded text-center z-10 pointer-events-none whitespace-nowrap transition-opacity duration-200"
           style={{ 
-            left: `${obj.vector.x}px`, 
-            top: `${obj.vector.y + (obj.size || 50) + 5}px`
+            left: 0, 
+            top: `${(obj.size || 50) + 5}px`
           }}
         >
           <div>Type: {obj.objectType}</div>
