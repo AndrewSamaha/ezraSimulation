@@ -5,7 +5,7 @@ import { SimulationObject } from '@/context/SimulationContext';
 import { ObjectTypeEnum } from '@/context/SimulationContext';
 import { CONTAINER_WIDTH, CONTAINER_HEIGHT } from '@/lib/constants/world';
 
-const MAX_PLANTS = 3;
+const MAX_PLANTS = 50;
 
 export const createNewPlant = (parent?: SimulationObject): SimulationObject => {
   if (!parent) {
@@ -13,7 +13,7 @@ export const createNewPlant = (parent?: SimulationObject): SimulationObject => {
       id: uuid(),
       objectType: ObjectTypeEnum.PLANT,
       color: 'green',
-      size: 25,
+      size: 10,
       age: 0,
       vector: new Victor(Math.random() * CONTAINER_WIDTH, Math.random() * CONTAINER_HEIGHT),
       velocity: new Victor(0, 0),
@@ -65,14 +65,14 @@ export function doPlantThings(
     if (obj.age <= 20) {
       return false;
     }
-    if (Math.random() < 0.7) {
+    if (Math.random() < 0.75) {
       return false;
     }
     return true;
   }
 
   const shouldSurvive = () => {
-    if (obj.age <= 20) {
+    if (obj.age <= 100) {
       return true;
     }
     if (Math.random() < 0.95) {
