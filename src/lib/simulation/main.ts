@@ -1,7 +1,7 @@
 import { SimulationObject, SimulationStep } from '@/context/SimulationContext';
 
 import { doPhysics } from './physics';
-import { doPlantThings } from './behavior/plant';
+import { doNutrienceThings } from './behavior/nutrience';
 
 /**
  * Type definition for simulation processors
@@ -17,10 +17,10 @@ const simulationProcessors: SimulationProcessor[] = [
   // Apply physics to all objects
   (objects) => objects.map(doPhysics),
   
-  // Apply plant-specific behaviors
+  // Apply nutrience-specific behaviors
   (objects) => objects.reduce<SimulationObject[]>((acc, obj) => {
     // Process the object and possibly create new objects
-    const result = doPlantThings(obj, objects);
+    const result = doNutrienceThings(obj, objects);
     return [...acc, ...result];
   }, []),
   

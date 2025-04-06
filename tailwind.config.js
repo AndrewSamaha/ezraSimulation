@@ -8,12 +8,12 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        'animal': 'red',
-        'plant': 'green',
+        'organism': 'red',
+        'nutrience': 'green',
       },
       boxShadow: {
-        'animal': '0 0 10px rgba(255, 0, 0, 0.5)',
-        'plant': '0 0 10px rgba(0, 255, 0, 0.5)',
+        'organism': '0 0 10px rgba(255, 0, 0, 0.5)',
+        'nutrience': '0 0 10px rgba(0, 255, 0, 0.5)',
       }
     },
   },

@@ -3,16 +3,16 @@
 import React, { createContext, useContext, useReducer, ReactNode, useEffect, useState } from 'react';
 import Victor from 'victor';
 import { calculateNextStep } from '@/lib/simulation/main';
-import { createNewPlant } from '@/lib/simulation/behavior/plant';
+import { createNewNutrience } from '@/lib/simulation/behavior/nutrience';
 
 // Create an enum from the ObjectTypes
 export enum ObjectTypeEnum {
-  ANIMAL = 'animal',
-  PLANT = 'plant'
+  ORGANISM = 'organism',
+  NUTRIENCE = 'nutrience'
 }
 
 // Define object types as an array of strings
-const ObjectTypes = [ObjectTypeEnum.ANIMAL, ObjectTypeEnum.PLANT] as const;
+const ObjectTypes = [ObjectTypeEnum.ORGANISM, ObjectTypeEnum.NUTRIENCE] as const;
 
 // Create a TypeScript type from the ObjectTypes array
 type ObjectType = typeof ObjectTypes[number];
@@ -72,10 +72,10 @@ const createInitialState = (): SimulationState => ({
   steps: [
     {
       objects: [
-        ...Array.from({ length: 5 }, () => createNewPlant()),
+        ...Array.from({ length: 5 }, () => createNewNutrience()),
         {
           id: 'circle-2',
-          objectType: ObjectTypeEnum.ANIMAL,
+          objectType: ObjectTypeEnum.ORGANISM,
           color: 'red',
           size: 25,
           age: 0,

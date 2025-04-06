@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { SimulationObject as SimObj, ObjectTypeEnum } from '@/context/SimulationContext';
-import { Animal } from './Animal';
-import { Plant } from './Plant';
+import { Organism } from './Organism';
+import { Nutrience } from './Nutrience';
 
 interface SimulationObjectProps {
   object: SimObj;
@@ -15,10 +15,10 @@ export function SimulationObject({ object: obj }: SimulationObjectProps) {
   // Determine which component to render based on object type
   const renderAppropriateComponent = () => {
     switch (obj.objectType) {
-    case ObjectTypeEnum.ANIMAL:
-      return <Animal object={obj} isHovered={isHovered} />;
-    case ObjectTypeEnum.PLANT:
-      return <Plant object={obj} isHovered={isHovered} />;
+    case ObjectTypeEnum.ORGANISM:
+      return <Organism object={obj} isHovered={isHovered} />;
+    case ObjectTypeEnum.NUTRIENCE:
+      return <Nutrience object={obj} isHovered={isHovered} />;
     default:
       return null;
     }
