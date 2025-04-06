@@ -41,6 +41,7 @@ export interface SimulationState {
   steps: SimulationStep[];
   isRunning: boolean;
   speed: number; // Milliseconds between steps
+  selectedObjectId: string | null; // Track selected object by ID
 }
 
 // Define available actions for the simulation
@@ -56,6 +57,7 @@ type SimulationAction =
   | { type: 'ADD_OBJECT', payload: SimulationObject }
   | { type: 'REMOVE_OBJECT', payload: string }
   | { type: 'SET_SIMULATION_STATE', payload: SimulationStep }
+  | { type: 'SELECT_OBJECT', payload: string | null }
   | { type: 'INITIALIZE_STATE' };
 
 // Empty initial state for server-side rendering
@@ -63,7 +65,8 @@ const emptyInitialState: SimulationState = {
   currentStep: 0,
   steps: [{ objects: [] }],
   isRunning: false,
-  speed: 100
+  speed: 100,
+  selectedObjectId: null
 };
 
 // Function to create the actual initial state (only called on client-side)
@@ -88,12 +91,18 @@ const createInitialState = (): SimulationState => ({
     }
   ],
   isRunning: false,
-  speed: 100
+  speed: 100,
+  selectedObjectId: null
 });
 
 // Reducer function to handle state updates
 function simulationReducer(state: SimulationState, action: SimulationAction): SimulationState {
   switch (action.type) {
+    case 'SELECT_OBJECT':
+      return {
+        ...state,
+        selectedObjectId: action.payload
+      };
     case 'START_SIMULATION':
       return { ...state, isRunning: true };
     

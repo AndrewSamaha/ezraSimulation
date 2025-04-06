@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { SimulationObject as SimObj, ObjectTypeEnum } from '@/context/SimulationContext';
+import { SimulationObject as SimObj, ObjectTypeEnum, useSimulation } from '@/context/SimulationContext';
 import { Organism } from './Organism';
 import { Nutrience } from './Nutrience';
 
@@ -11,6 +11,8 @@ interface SimulationObjectProps {
 
 export function SimulationObject({ object: obj }: SimulationObjectProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const { dispatch, state } = useSimulation();
+  const isSelected = state.selectedObjectId === obj.id;
   
   // Determine which component to render based on object type
   const renderAppropriateComponent = () => {
@@ -33,6 +35,8 @@ export function SimulationObject({ object: obj }: SimulationObjectProps) {
       }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onClick={() => dispatch({ type: 'SELECT_OBJECT', payload: obj.id })}
+      aria-selected={isSelected}
     >
       {/* Render the appropriate component based on object type */}
       {renderAppropriateComponent()}

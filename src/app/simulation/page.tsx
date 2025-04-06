@@ -7,11 +7,22 @@ import { useSimulation, SimulationObject as SimObj } from '@/context/SimulationC
 import { SimulationObject } from '@/components/SimulationObject';
 import { CONTAINER_WIDTH, CONTAINER_HEIGHT } from '@/lib/constants/world';
 import { Card } from '@/components/ui/card';
+import { Drawer } from '@/components/ui/drawer';
 
 export default function SimulationPage() {
   const { state, dispatch, isInitialized } = useSimulation();
   const containerRef = useRef<HTMLDivElement>(null);
   const intervalRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  
+  // Get the currently selected object
+  const selectedObject = state.selectedObjectId
+    ? state.steps[state.currentStep].objects.find(obj => obj.id === state.selectedObjectId) || null
+    : null;
+    
+  // Handle closing the drawer
+  const handleCloseDrawer = () => {
+    dispatch({ type: 'SELECT_OBJECT', payload: null });
+  };
 
   // No click handling as per requirements
 
@@ -72,8 +83,15 @@ export default function SimulationPage() {
   return (
     <div 
       ref={containerRef}
-      className="w-full h-screen bg-black bg-black bg-contain bg-no-repeat bg-center relative overflow-hidden flex items-center justify-center"
+      className="w-full h-screen bg-black bg-contain bg-no-repeat bg-center relative overflow-hidden"
     >
+      {/* Main content container with transition effect */}
+      <div 
+        className={`absolute inset-0 flex items-center justify-center transition-transform duration-300 ease-in-out`}
+        style={{ 
+          transform: selectedObject ? 'translateX(-160px)' : 'translateX(0)'
+        }}
+      >
       <Card className="relative bg-black rounded-lg border border-white/10" 
         style={{ 
           width: `${CONTAINER_WIDTH}px`, 
@@ -93,7 +111,8 @@ export default function SimulationPage() {
         )}
       </Card>
       
-      <div className="absolute top-5 left-1/2 transform -translate-x-1/2 flex gap-2.5 bg-black/40 p-2 px-4 rounded z-10">
+      <div className="fixed top-5 flex gap-2.5 bg-black/40 p-2 px-4 rounded z-10"
+           style={{ left: '50%', transform: `translateX(-50%) ${selectedObject ? 'translateX(-80px)' : ''}`, transition: 'transform 300ms ease-in-out' }}>
         <Button 
           onClick={startSimulation} 
           disabled={state.isRunning || !isInitialized}
@@ -122,15 +141,25 @@ export default function SimulationPage() {
         </Button>
       </div>
       
-      <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 text-white text-sm bg-black/70 p-2 px-4 rounded pointer-events-none">
+      <div className="fixed bottom-5 text-white text-sm bg-black/70 p-2 px-4 rounded pointer-events-none"
+           style={{ left: '50%', transform: `translateX(-50%) ${selectedObject ? 'translateX(-80px)' : ''}`, transition: 'transform 300ms ease-in-out' }}>
         {state.isRunning 
           ? 'Simulation running - use controls to pause or reset' 
           : 'Use the controls to start, pause, or reset the simulation'}
       </div>
       
-      <div className="absolute top-5 right-5 text-white text-sm bg-black/70 p-2 px-4 rounded">
-        Step: {state.currentStep} / {state.steps.length - 1}
+        <div className="fixed top-5 right-5 text-white text-sm bg-black/70 p-2 px-4 rounded"
+             style={{ transform: selectedObject ? 'translateX(-160px)' : 'translateX(0)', transition: 'transform 300ms ease-in-out' }}>
+          Step: {state.currentStep} / {state.steps.length - 1}
+        </div>
       </div>
+
+      {/* Drawer Component */}
+      <Drawer 
+        isOpen={!!selectedObject} 
+        onClose={handleCloseDrawer} 
+        selectedObject={selectedObject}
+      />
     </div>
   );
 }
