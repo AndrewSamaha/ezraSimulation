@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useReducer, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, ReactNode, useEffect, useState } from 'react';
 import Victor from 'victor';
 import { calculateNextStep } from '@/lib/simulation/main';
 import { createNewPlant } from '@/lib/simulation/behavior/plant';
@@ -55,10 +55,19 @@ type SimulationAction =
   | { type: 'UPDATE_OBJECT', payload: SimulationObject }
   | { type: 'ADD_OBJECT', payload: SimulationObject }
   | { type: 'REMOVE_OBJECT', payload: string }
-  | { type: 'SET_SIMULATION_STATE', payload: SimulationStep };
+  | { type: 'SET_SIMULATION_STATE', payload: SimulationStep }
+  | { type: 'INITIALIZE_STATE' };
 
-// Initial state for the simulation
-const initialState: SimulationState = {
+// Empty initial state for server-side rendering
+const emptyInitialState: SimulationState = {
+  currentStep: 0,
+  steps: [{ objects: [] }],
+  isRunning: false,
+  speed: 100
+};
+
+// Function to create the actual initial state (only called on client-side)
+const createInitialState = (): SimulationState => ({
   currentStep: 0,
   steps: [
     {
@@ -66,7 +75,7 @@ const initialState: SimulationState = {
         ...Array.from({ length: 5 }, () => createNewPlant()),
         {
           id: 'circle-2',
-          objectType: ObjectTypeEnum.ANIMAL,            // Using one of the defined object types
+          objectType: ObjectTypeEnum.ANIMAL,
           color: 'red',
           size: 25,
           age: 0,
@@ -80,7 +89,7 @@ const initialState: SimulationState = {
   ],
   isRunning: false,
   speed: 100
-};
+});
 
 // Reducer function to handle state updates
 function simulationReducer(state: SimulationState, action: SimulationAction): SimulationState {
@@ -92,8 +101,16 @@ function simulationReducer(state: SimulationState, action: SimulationAction): Si
       return { ...state, isRunning: false };
     
     case 'RESET_SIMULATION':
-      return { ...initialState };
+      return createInitialState();
     
+    case 'SET_SIMULATION_STATE': {
+      return {
+        ...state,
+        steps: [action.payload],
+        currentStep: 0
+      };
+    }
+
     case 'NEXT_STEP': {
       // If we're at the last known step, we need to calculate the next step
       if (state.currentStep >= state.steps.length - 1) {
@@ -192,56 +209,52 @@ function simulationReducer(state: SimulationState, action: SimulationAction): Si
       };
     }
     
-    case 'SET_SIMULATION_STATE': {
-      const updatedSteps = [...state.steps];
-      updatedSteps[state.currentStep] = action.payload;
-      
-      // Remove any future steps since we've modified the timeline
-      const newSteps = updatedSteps.slice(0, state.currentStep + 1);
-      
-      return {
-        ...state,
-        steps: newSteps
-      };
-    }
-    
     default:
       return state;
   }
 }
 
-// Create the simulation context
-interface SimulationContextProps {
+// Create the context
+const SimulationContext = createContext<{
   state: SimulationState;
   dispatch: React.Dispatch<SimulationAction>;
-}
+  isInitialized: boolean;
+}>({ 
+  state: emptyInitialState, 
+  dispatch: () => null,
+  isInitialized: false 
+});
 
-const SimulationContext = createContext<SimulationContextProps | undefined>(undefined);
+// Provider component to wrap the app with
+export function SimulationProvider({ children }: { children: ReactNode }) {
+  // Start with empty state for SSR
+  const [state, dispatch] = useReducer(simulationReducer, emptyInitialState);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-// Provider component
-interface SimulationProviderProps {
-  children: ReactNode;
-}
+  // Initialize the simulation only on the client side
+  useEffect(() => {
+    // Only initialize once
+    if (!isInitialized) {
+      dispatch({ 
+        type: 'SET_SIMULATION_STATE', 
+        payload: createInitialState().steps[0] 
+      });
+      setIsInitialized(true);
+    }
+  }, [isInitialized]);
 
-export function SimulationProvider({ children }: SimulationProviderProps) {
-  const [state, dispatch] = useReducer(simulationReducer, initialState);
-  
-  const value = { state, dispatch };
-  
   return (
-    <SimulationContext.Provider value={value}>
+    <SimulationContext.Provider value={{ state, dispatch, isInitialized }}>
       {children}
     </SimulationContext.Provider>
   );
 }
 
-// Custom hook to use the simulation context
+// Hook for components to use the simulation context
 export function useSimulation() {
   const context = useContext(SimulationContext);
-  
   if (context === undefined) {
     throw new Error('useSimulation must be used within a SimulationProvider');
   }
-  
   return context;
 }
