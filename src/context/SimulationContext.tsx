@@ -4,6 +4,9 @@ import React, { createContext, useContext, useReducer, ReactNode, useEffect, use
 import Victor from 'victor';
 import { calculateNextStep } from '@/lib/simulation/main';
 import { createNewNutrience } from '@/lib/simulation/behavior/nutrience';
+import { DNA, HERBIVORE_DNA_TEMPLATE, PLANT_DNA_TEMPLATE } from '@/lib/simulation/evolution/organism';
+import { createNewOrganism } from '@/lib/simulation/behavior/organism';
+import { ActionType } from '@/lib/simulation/behavior/actions';
 
 // Create an enum from the ObjectTypes
 export enum ObjectTypeEnum {
@@ -28,6 +31,9 @@ export interface SimulationObject {
   velocity: Victor;  // Velocity vector (heading and speed)
   forceInput: Victor; // Force vector (for external forces)
   parentId: string | null;
+  energy: number;
+  actionHistory: ActionType[];
+  dna?: DNA;
 }
 
 // Define the shape of a simulation state at a specific step
@@ -76,17 +82,8 @@ const createInitialState = (): SimulationState => ({
     {
       objects: [
         ...Array.from({ length: 5 }, () => createNewNutrience()),
-        {
-          id: 'circle-2',
-          objectType: ObjectTypeEnum.ORGANISM,
-          color: 'red',
-          size: 25,
-          age: 0,
-          vector: new Victor(200, 200),   // Initial position
-          velocity: new Victor(2, 1),      // Initial velocity
-          forceInput: new Victor(0, 0),    // Initial force
-          parentId: null
-        }
+        createNewOrganism(PLANT_DNA_TEMPLATE),
+        createNewOrganism(HERBIVORE_DNA_TEMPLATE)
       ]
     }
   ],

@@ -8,7 +8,19 @@
 //     1. Staying still gains energy (1 per step)
 //     2. Eating things gains energy (100 per bite)
 
-const energyBudget = {
+export interface EnergyBudget {
+    costs: {
+        move: number;
+        attack: number;
+        reproduce: number;
+    };
+    earnings: {
+        stay: number;
+        eat: number;
+    };
+}
+
+export const ENERGY_BUDGET: EnergyBudget = {
     costs: {
         move: 1,
         attack: 10,
@@ -19,3 +31,4 @@ const energyBudget = {
         eat: 10
     }
 }
+

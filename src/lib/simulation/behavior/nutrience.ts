@@ -18,7 +18,9 @@ export const createNewNutrience = (parent?: SimulationObject): SimulationObject 
       vector: new Victor(Math.random() * CONTAINER_WIDTH, Math.random() * CONTAINER_HEIGHT),
       velocity: new Victor(0, 0),
       forceInput: new Victor(0, 0),
-      parentId: null
+      parentId: null,
+      energy: 100,
+      actionHistory: []
     };
   }
 
@@ -34,7 +36,9 @@ export const createNewNutrience = (parent?: SimulationObject): SimulationObject 
     vector: newPosition,
     velocity: parent.velocity.clone(),
     forceInput: forceAwayFromParent,
-    parentId: parent.id
+    parentId: parent.id,
+    energy: 100,
+    actionHistory: []
   };
 };
 
