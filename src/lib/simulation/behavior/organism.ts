@@ -34,15 +34,20 @@ export const createNewOrganism = (sampleSource: DNA | SimulationObject, mutation
   };
 };
 
-export const findNearestNutrient = (cur: SimulationObject, allObjects: SimulationObject[]) => {
-  const nutrients = allObjects.filter(o => o.objectType === ObjectTypeEnum.NUTRIENCE);
-  if (nutrients.length === 0) {
+export const findNearestObject = (cur: SimulationObject, allObjects: SimulationObject[], objectType: ObjectTypeEnum) => {
+  const filteredObjects = allObjects.filter(o => o.objectType === objectType);
+  if (filteredObjects.length === 0) {
     return null;
   }
-  return nutrients.reduce((prev, curr) => {
+  return filteredObjects.reduce((prev, curr) => {
     const distance = cur.vector.distance(curr.vector);
-    return distance < prev.vector.distance(curr.vector) ? curr : prev;
-  }, nutrients[0]);
+    return distance < cur.vector.distance(prev.vector) ? curr : prev;
+  }, filteredObjects[0]);
+}
+
+// Keeping the original function for backward compatibility
+export const findNearestNutrient = (cur: SimulationObject, allObjects: SimulationObject[]) => {
+  return findNearestObject(cur, allObjects, ObjectTypeEnum.NUTRIENCE);
 }
 
 const shouldReproduce = (obj: SimulationObject, allObjects: SimulationObject[]) => {
