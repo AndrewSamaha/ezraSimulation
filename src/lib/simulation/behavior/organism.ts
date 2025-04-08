@@ -34,6 +34,35 @@ export const createNewOrganism = (sampleSource: DNA | SimulationObject, mutation
   };
 };
 
+const findNearestNutrient = (cur: SimulationObject, allObjects: SimulationObject[]) => {
+  const nutrients = allObjects.filter(o => o.objectType === ObjectTypeEnum.NUTRIENCE);
+  if (nutrients.length === 0) {
+    return null;
+  }
+  return nutrients.reduce((prev, curr) => {
+    const distance = cur.vector.distance(curr.vector);
+    return distance < prev.vector.distance(curr.vector) ? curr : prev;
+  }, nutrients[0]);
+}
+
+const shouldReproduce = (obj: SimulationObject, allObjects: SimulationObject[]) => {
+  const organismCount = allObjects.filter(o => o.objectType === ObjectTypeEnum.ORGANISM).length;
+
+  if (organismCount >= MAX_ORGANISM) {
+    return false;
+  }
+  if (obj.energy < expressGene(obj.dna!, 'minimumEnergyToReproduce')) {
+    return false;
+  }
+  if (obj.age <= 20) {
+    return false;
+  }
+  if (Math.random() < expressGene(obj.dna!, 'reproductionProbability')) {
+    return false;
+  }
+  return true;
+}
+
 /**
  * Apply nutrience-specific behaviors and return an array that can contain the original object
  * plus any new objects created (e.g., reproduction, spawning resources, etc.)
@@ -59,23 +88,7 @@ export function doOrganismThings(
 
   const returnArray: SimulationObject[] = [];
 
-  const shouldReproduce = () => {
-    const organismCount = allObjects.filter(o => o.objectType === ObjectTypeEnum.ORGANISM).length;
-
-    if (organismCount >= MAX_ORGANISM) {
-      return false;
-    }
-    if (obj.energy < expressGene(dna, 'minimumEnergyToReproduce')) {
-      return false;
-    }
-    if (obj.age <= 20) {
-      return false;
-    }
-    if (Math.random() < expressGene(dna, 'reproductionProbability')) {
-      return false;
-    }
-    return true;
-  }
+  
 
   const shouldDie = () => {
     if (obj.energy <= 0) {
@@ -84,22 +97,13 @@ export function doOrganismThings(
     return false;
   }
 
-  const findNearestNutrient = () => {
-    const nutrients = allObjects.filter(o => o.objectType === ObjectTypeEnum.NUTRIENCE);
-    if (nutrients.length === 0) {
-      return null;
-    }
-    return nutrients.reduce((prev, curr) => {
-      const distance = obj.vector.distance(curr.vector);
-      return distance < prev.distance ? curr : prev;
-    }, nutrients[0]);
-  }
+
 
   if (shouldDie()) {
     return returnArray;
   }
 
-  if (shouldReproduce()) {
+  if (shouldReproduce(obj, allObjects)) {
     const newOrganism = createNewOrganism(obj);
     const lostEnergy = newOrganism.energy;
     obj.energy -= lostEnergy;
