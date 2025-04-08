@@ -34,7 +34,7 @@ export const createNewOrganism = (sampleSource: DNA | SimulationObject, mutation
   };
 };
 
-const findNearestNutrient = (cur: SimulationObject, allObjects: SimulationObject[]) => {
+export const findNearestNutrient = (cur: SimulationObject, allObjects: SimulationObject[]) => {
   const nutrients = allObjects.filter(o => o.objectType === ObjectTypeEnum.NUTRIENCE);
   if (nutrients.length === 0) {
     return null;
