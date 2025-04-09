@@ -8,6 +8,7 @@ import { SimulationObject } from '@/components/SimulationObject';
 import { CONTAINER_WIDTH, CONTAINER_HEIGHT } from '@/lib/constants/world';
 import { Card } from '@/components/ui/card';
 import { Drawer } from '@/components/ui/drawer';
+import { PerformancePanel } from '@/components/PerformancePanel';
 
 export default function SimulationPage() {
   const { state, dispatch, isInitialized } = useSimulation();
@@ -151,6 +152,12 @@ export default function SimulationPage() {
         <div className="fixed top-5 right-5 text-white text-sm bg-black/70 p-2 px-4 rounded"
              style={{ transform: selectedObject ? 'translateX(-220px)' : 'translateX(0)', transition: 'transform 300ms ease-in-out' }}>
           Step: {state.currentStep} / {state.steps.length - 1}
+        </div>
+        
+        {/* Performance Panel */}
+        <div className="fixed bottom-20 right-5"
+             style={{ transform: selectedObject ? 'translateX(-220px)' : 'translateX(0)', transition: 'transform 300ms ease-in-out' }}>
+          <PerformancePanel className="w-60" />
         </div>
       </div>
 

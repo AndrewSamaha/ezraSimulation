@@ -68,20 +68,39 @@ const shouldReproduce = (obj: SimulationObject, allObjects: SimulationObject[]) 
   return true;
 }
 
+// Should we create vectors for just the nearest things, or all the things?
+const createAffinityVector = (cur: SimulationObject, target: SimulationObject) => {
+  const nearest = findNearestObject(cur, [target], target.objectType);
+  if (!nearest) {
+    return new Victor(0, 0);
+  }
+  return nearest.vector.subtract(cur.vector);
+}
+  
+
 /**
  * Apply nutrience-specific behaviors and return an array that can contain the original object
  * plus any new objects created (e.g., reproduction, spawning resources, etc.)
  * 
  * @param obj The nutrience object to process
  * @param allObjects All objects in the current simulation step (for contextual behaviors)
- * @returns Array of objects including the processed object and any new objects
+ * @param metricsCollector Optional object to collect performance metrics
+ * @returns Array of objects including the processed object and any new objects, and duration if metricsCollector provided
  */
 export function doOrganismThings(
   obj: SimulationObject, 
-  allObjects: SimulationObject[]
-): SimulationObject[] {
+  allObjects: SimulationObject[],
+  metricsCollector?: Record<string, number[]>
+): SimulationObject[] | { objects: SimulationObject[], duration: number } {
+  // Start timing
+  const startTime = performance.now();
+  
   // Skip non-organism objects
   if (obj.objectType !== ObjectTypeEnum.ORGANISM) {
+    // Even for skipped objects, return in the expected format if metrics are requested
+    if (metricsCollector) {
+      return { objects: [obj], duration: 0 };
+    }
     return [obj];
   }
   
@@ -93,8 +112,6 @@ export function doOrganismThings(
 
   const returnArray: SimulationObject[] = [];
 
-  
-
   const shouldDie = () => {
     if (obj.energy <= 0) {
       return true;
@@ -102,9 +119,16 @@ export function doOrganismThings(
     return false;
   }
 
-
-
   if (shouldDie()) {
+    // Calculate duration before returning
+    if (metricsCollector) {
+      const duration = performance.now() - startTime;
+      if (!metricsCollector.organismCalculations) {
+        metricsCollector.organismCalculations = [];
+      }
+      metricsCollector.organismCalculations.push(duration);
+      return { objects: returnArray, duration };
+    }
     return returnArray;
   }
 
@@ -116,7 +140,15 @@ export function doOrganismThings(
     returnArray.push(newOrganism);
   }
 
+  // Calculate duration before final return
+  if (metricsCollector) {
+    const duration = performance.now() - startTime;
+    if (!metricsCollector.organismCalculations) {
+      metricsCollector.organismCalculations = [];
+    }
+    metricsCollector.organismCalculations.push(duration);
+    return { objects: returnArray, duration };
+  }
   
-
   return returnArray;
 }

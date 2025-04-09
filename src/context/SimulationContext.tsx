@@ -41,6 +41,23 @@ export interface SimulationStep {
   objects: SimulationObject[];
 }
 
+// Define performance metrics interface
+export interface PerformanceMetrics {
+  // Frame metrics
+  lastFrameDuration: number;
+  frameDurations: number[];  // Last 30 frames
+  fps: number;
+  
+  // Organism calculation metrics
+  totalOrganismCalculationTime: number;
+  organismCalculationTimes: number[];  // Last 30 frames
+  avgOrganismCalculationTime: number;
+  
+  // Other specific metrics
+  detailedMetrics?: {[key: string]: number[]};
+  lastUpdateTimestamp: number;
+}
+
 // Define the overall simulation state
 export interface SimulationState {
   currentStep: number;
@@ -48,6 +65,7 @@ export interface SimulationState {
   isRunning: boolean;
   speed: number; // Milliseconds between steps
   selectedObjectId: string | null; // Track selected object by ID
+  performanceMetrics: PerformanceMetrics;
 }
 
 // Define available actions for the simulation
@@ -72,7 +90,16 @@ const emptyInitialState: SimulationState = {
   steps: [{ objects: [] }],
   isRunning: false,
   speed: 100,
-  selectedObjectId: null
+  selectedObjectId: null,
+  performanceMetrics: {
+    lastFrameDuration: 0,
+    frameDurations: [],
+    fps: 0,
+    totalOrganismCalculationTime: 0,
+    organismCalculationTimes: [],
+    avgOrganismCalculationTime: 0,
+    lastUpdateTimestamp: performance.now()
+  }
 };
 
 // Function to create the actual initial state (only called on client-side)
@@ -89,7 +116,16 @@ const createInitialState = (): SimulationState => ({
   ],
   isRunning: false,
   speed: 100,
-  selectedObjectId: null
+  selectedObjectId: null,
+  performanceMetrics: {
+    lastFrameDuration: 0,
+    frameDurations: [],
+    fps: 0,
+    totalOrganismCalculationTime: 0,
+    organismCalculationTimes: [],
+    avgOrganismCalculationTime: 0,
+    lastUpdateTimestamp: performance.now()
+  }
 });
 
 // Reducer function to handle state updates
@@ -122,12 +158,45 @@ function simulationReducer(state: SimulationState, action: SimulationAction): Si
       if (state.currentStep >= state.steps.length - 1) {
         // Calculate new positions based on vector movement and collisions using our extracted physics logic
         const currentStep = state.steps[state.currentStep];
-        const newStep = calculateNextStep(currentStep);
+        const result = calculateNextStep(currentStep);
+        const { step: newStep, metrics } = result;
+        
+        // Update performance metrics
+        const now = performance.now();
+        const frameTime = metrics?.frameDuration || 0;
+        const organismCalcTimes = metrics?.organismCalculationTimes || [];
+        const totalOrgCalcTime = organismCalcTimes.reduce((sum, time) => sum + time, 0);
+        const avgOrgCalcTime = organismCalcTimes.length > 0 ? totalOrgCalcTime / organismCalcTimes.length : 0;
+        
+        // Calculate FPS based on last frame duration
+        const fps = frameTime > 0 ? 1000 / frameTime : 0;
+        
+        // Limit history to last 30 frames
+        const MAX_HISTORY = 30;
+        const frameDurations = [
+          frameTime, 
+          ...state.performanceMetrics.frameDurations
+        ].slice(0, MAX_HISTORY);
+        
+        const organismCalculationTimes = [
+          ...organismCalcTimes,
+          ...state.performanceMetrics.organismCalculationTimes
+        ].slice(0, MAX_HISTORY);
         
         return {
           ...state,
           steps: [...state.steps, newStep],
-          currentStep: state.currentStep + 1
+          currentStep: state.currentStep + 1,
+          performanceMetrics: {
+            ...state.performanceMetrics,
+            lastFrameDuration: frameTime,
+            frameDurations,
+            fps,
+            totalOrganismCalculationTime: totalOrgCalcTime,
+            organismCalculationTimes,
+            avgOrganismCalculationTime: avgOrgCalcTime,
+            lastUpdateTimestamp: now
+          }
         };
       } else {
         // Just move to the next pre-calculated step
