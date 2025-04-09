@@ -149,7 +149,7 @@ export default function SimulationPage() {
       </div>
       
         <div className="fixed top-5 right-5 text-white text-sm bg-black/70 p-2 px-4 rounded"
-             style={{ transform: selectedObject ? 'translateX(-160px)' : 'translateX(0)', transition: 'transform 300ms ease-in-out' }}>
+             style={{ transform: selectedObject ? 'translateX(-220px)' : 'translateX(0)', transition: 'transform 300ms ease-in-out' }}>
           Step: {state.currentStep} / {state.steps.length - 1}
         </div>
       </div>
