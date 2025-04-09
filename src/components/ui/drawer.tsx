@@ -17,19 +17,18 @@ export function Drawer({ isOpen, onClose, selectedObject }: DrawerProps) {
     return `(${Math.round(vector.x)}, ${Math.round(vector.y)})`;
   };
 
+  // This drawer doesn't use a backdrop that blocks controls
+  // It simply renders the drawer panel itself
+
   return (
     <>
-      {/* Backdrop */}
+      {/* Drawer panel only - no backdrop that blocks controls */}
       <div 
-        className="fixed inset-0 bg-black/20 z-40 transition-opacity duration-300"
-        style={{ opacity: isOpen ? 1 : 0 }}
-        onClick={onClose}
-      />
-      
-      {/* Drawer */}
-      <div 
-        className={`fixed right-0 top-0 h-full bg-gray-900 text-white shadow-lg z-50 w-96 transform transition-transform duration-300 ease-in-out overflow-auto`}
-        style={{ transform: isOpen ? 'translateX(0)' : 'translateX(100%)' }}
+        className={`fixed right-0 top-0 h-full bg-gray-900 text-white shadow-lg w-96 transform transition-transform duration-300 ease-in-out overflow-auto`}
+        style={{ 
+          transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
+          zIndex: 40  // High z-index but not higher than controls
+        }}
       >
         {/* Header */}
         <div className="p-4 border-b border-gray-700 flex justify-between items-center">

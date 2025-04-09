@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Play, Pause, RotateCcw } from 'lucide-react';
+import { Play, Pause, RotateCcw, ChevronRight } from 'lucide-react';
 import { useSimulation, SimulationObject as SimObj } from '@/context/SimulationContext';
 import { SimulationObject } from '@/components/SimulationObject';
 import { CONTAINER_WIDTH, CONTAINER_HEIGHT } from '@/lib/constants/world';
@@ -20,15 +20,27 @@ export default function SimulationPage() {
     ? state.steps[state.currentStep].objects.find(obj => obj.id === state.selectedObjectId) || null
     : null;
     
-  // Handle closing the drawer
+  // Handle closing the drawer - only used for the close button in the drawer
   const handleCloseDrawer = () => {
     dispatch({ type: 'SELECT_OBJECT', payload: null });
+  };
+  
+  // Stop event propagation for the controls container
+  const handleControlsClick = (e: React.MouseEvent) => {
+    // Prevent the click from reaching the backdrop
+    e.stopPropagation();
   };
 
   // No click handling as per requirements
 
   // Start the simulation
-  const startSimulation = () => {
+  const startSimulation = (e?: React.MouseEvent) => {
+    // Prevent event propagation if it's a mouse event
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    
     if (!state.isRunning) {
       dispatch({ type: 'START_SIMULATION' });
       
@@ -50,7 +62,13 @@ export default function SimulationPage() {
   };
 
   // Pause the simulation
-  const pauseSimulation = () => {
+  const pauseSimulation = (e?: React.MouseEvent) => {
+    // Prevent event propagation if it's a mouse event
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    
     if (state.isRunning) {
       dispatch({ type: 'PAUSE_SIMULATION' });
       
@@ -62,13 +80,48 @@ export default function SimulationPage() {
   };
 
   // Reset the simulation
-  const resetSimulation = () => {
+  const resetSimulation = (e?: React.MouseEvent) => {
+    // Prevent event propagation if it's a mouse event
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = undefined;
     }
     
     dispatch({ type: 'RESET_SIMULATION' });
+  };
+  
+  // Special step button handler that preserves drawer state
+  const stepSimulation = (e: React.MouseEvent) => {
+    if (!state.isRunning) {
+      // CRITICAL: Completely stop event propagation
+      e.stopPropagation();
+      e.nativeEvent.stopImmediatePropagation();
+      e.preventDefault();
+      
+      // We're going to manually handle a step while preserving selection
+      const nextStep = state.currentStep + 1;
+      
+      // If we need to calculate a new step
+      if (nextStep >= state.steps.length) {
+        // Dispatch the next step action with a flag to preserve selection
+        dispatch({ 
+          type: 'NEXT_STEP',
+          preserveSelection: true // Custom flag to tell reducer to keep selection
+        });
+      } else {
+        // For pre-calculated steps, we need to manually advance while keeping selection
+        dispatch({ 
+          type: 'GO_TO_STEP', 
+          payload: nextStep,
+          preserveSelection: true // Custom flag to tell reducer to keep selection
+        });
+      }
+    }
   };
 
   // Cleanup on unmount
@@ -85,6 +138,13 @@ export default function SimulationPage() {
     <div 
       ref={containerRef}
       className="w-full h-screen bg-black bg-contain bg-no-repeat bg-center relative overflow-hidden"
+      onClick={(e) => {
+        // Only close the drawer when clicking on the background itself
+        // This prevents clicks on control elements from closing the drawer
+        if (e.target === containerRef.current) {
+          dispatch({ type: 'SELECT_OBJECT', payload: null });
+        }
+      }}
     >
       {/* Main content container with transition effect */}
       <div 
@@ -112,14 +172,22 @@ export default function SimulationPage() {
         )}
       </Card>
       
-      <div className="fixed top-5 flex gap-2.5 bg-black/40 p-2 px-4 rounded z-10"
-           style={{ left: '50%', transform: `translateX(-50%) ${selectedObject ? 'translateX(-80px)' : ''}`, transition: 'transform 300ms ease-in-out' }}>
+      <div className="fixed top-5 flex gap-2.5 bg-black/40 p-2 px-4 rounded"
+           style={{ 
+             left: '50%', 
+             transform: `translateX(-50%) ${selectedObject ? 'translateX(-80px)' : ''}`, 
+             transition: 'transform 300ms ease-in-out',
+             zIndex: 100 // Highest z-index to ensure it's above everything else
+           }}
+           onClick={handleControlsClick}>
         <Button 
           onClick={startSimulation} 
           disabled={state.isRunning || !isInitialized}
           className="bg-white/20 text-white border border-white/30 hover:bg-white/30"
           variant="outline"
           size="icon"
+          title="Play simulation"
+          data-drawer-exclude="true"
         >
           <Play className="h-4 w-4" />
         </Button>
@@ -129,14 +197,49 @@ export default function SimulationPage() {
           className="bg-white/20 text-white border border-white/30 hover:bg-white/30"
           variant="outline"
           size="icon"
+          title="Pause simulation"
+          data-drawer-exclude="true"
         >
           <Pause className="h-4 w-4" />
+        </Button>
+        <Button 
+          // Use an inline handler that completely bypasses normal event processing
+          onMouseDown={(e) => {
+            // Stop all event propagation
+            e.stopPropagation();
+            e.preventDefault();
+            
+            if (!state.isRunning && isInitialized) {
+              // Store current selection
+              const currentSelectionId = state.selectedObjectId;
+              
+              // Step the simulation
+              dispatch({ type: 'NEXT_STEP' });
+              
+              // If we had a selection, immediately re-select it
+              if (currentSelectionId) {
+                dispatch({ type: 'SELECT_OBJECT', payload: currentSelectionId });
+              }
+            }
+            
+            // Return false to prevent additional handling
+            return false;
+          }}
+          disabled={state.isRunning || !isInitialized}
+          className="bg-white/20 text-white border border-white/30 hover:bg-white/30"
+          variant="outline"
+          size="icon"
+          title="Step forward"
+        >
+          <ChevronRight className="h-4 w-4" />
         </Button>
         <Button 
           onClick={resetSimulation} 
           className="bg-white/20 text-white border border-white/30 hover:bg-white/30"
           variant="outline"
           size="icon"
+          title="Reset simulation"
+          data-drawer-exclude="true"
         >
           <RotateCcw className="h-4 w-4" />
         </Button>
@@ -167,6 +270,14 @@ export default function SimulationPage() {
         onClose={handleCloseDrawer} 
         selectedObject={selectedObject}
       />
+      
+      {/* Invisible overlay that prevents background clicks from closing drawer when using controls */}
+      {!!selectedObject && (
+        <div 
+          className="fixed inset-0 z-30 pointer-events-none"
+          onClick={(e) => e.stopPropagation()}
+        />
+      )}
     </div>
   );
 }

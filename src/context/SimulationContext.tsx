@@ -73,9 +73,9 @@ type SimulationAction =
   | { type: 'START_SIMULATION' }
   | { type: 'PAUSE_SIMULATION' }
   | { type: 'RESET_SIMULATION' }
-  | { type: 'NEXT_STEP' }
+  | { type: 'NEXT_STEP', preserveSelection?: boolean }
   | { type: 'PREVIOUS_STEP' }
-  | { type: 'GO_TO_STEP', payload: number }
+  | { type: 'GO_TO_STEP', payload: number, preserveSelection?: boolean }
   | { type: 'SET_SPEED', payload: number }
   | { type: 'UPDATE_OBJECT', payload: SimulationObject }
   | { type: 'ADD_OBJECT', payload: SimulationObject }
@@ -183,10 +183,33 @@ function simulationReducer(state: SimulationState, action: SimulationAction): Si
           ...state.performanceMetrics.organismCalculationTimes
         ].slice(0, MAX_HISTORY);
         
+        // Check if we need to update the selected object's ID in the new step
+        let updatedSelectedObjectId = state.selectedObjectId;
+        
+        // If there was a selected object, make sure it's still available in the new step
+        // and keep following it
+        if (state.selectedObjectId) {
+          // Find the object in the new step that matches the selected object
+          const selectedInPrevStep = currentStep.objects.find(obj => obj.id === state.selectedObjectId);
+          const selectedInNewStep = newStep.objects.find(obj => {
+            // If we can find the selected object in the new step by ID, use it
+            if (obj.id === state.selectedObjectId) return true;
+            
+            // If not, try to find it by parentId (in case it was reproduced/transformed)
+            return selectedInPrevStep && obj.parentId === selectedInPrevStep.id;
+          });
+          
+          // Update the selected object ID if found in the new step
+          if (selectedInNewStep) {
+            updatedSelectedObjectId = selectedInNewStep.id;
+          }
+        }
+        
         return {
           ...state,
           steps: [...state.steps, newStep],
           currentStep: state.currentStep + 1,
+          selectedObjectId: updatedSelectedObjectId, // Maintain selection across steps
           performanceMetrics: {
             ...state.performanceMetrics,
             lastFrameDuration: frameTime,
@@ -199,10 +222,35 @@ function simulationReducer(state: SimulationState, action: SimulationAction): Si
           }
         };
       } else {
-        // Just move to the next pre-calculated step
+        // Just move to the next pre-calculated step, maintaining the selected object
+        // Check if we need to update the selected object's ID in the next step
+        let updatedSelectedObjectId = state.selectedObjectId;
+        
+        // If there was a selected object, make sure it's still available in the next step
+        if (state.selectedObjectId) {
+          const currentStep = state.steps[state.currentStep];
+          const nextStep = state.steps[state.currentStep + 1];
+          
+          // Find the object in the next step that matches the selected object
+          const selectedInCurStep = currentStep.objects.find(obj => obj.id === state.selectedObjectId);
+          const selectedInNextStep = nextStep.objects.find(obj => {
+            // If we can find the selected object in the next step by ID, use it
+            if (obj.id === state.selectedObjectId) return true;
+            
+            // If not, try to find it by parentId (in case it was reproduced/transformed)
+            return selectedInCurStep && obj.parentId === selectedInCurStep.id;
+          });
+          
+          // Update the selected object ID if found in the next step
+          if (selectedInNextStep) {
+            updatedSelectedObjectId = selectedInNextStep.id;
+          }
+        }
+        
         return {
           ...state,
-          currentStep: state.currentStep + 1
+          currentStep: state.currentStep + 1,
+          selectedObjectId: updatedSelectedObjectId // Maintain selection across steps
         };
       }
     }
