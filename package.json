@@ -13,7 +13,6 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "ladle": "ladle serve",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },
@@ -34,7 +33,6 @@
   "devDependencies": {
     "@chromatic-com/storybook": "^3.2.6",
     "@eslint/eslintrc": "^3",
-    "@ladle/react": "^5.0.2",
     "@storybook/addon-essentials": "^8.6.12",
     "@storybook/addon-onboarding": "^8.6.12",
     "@storybook/blocks": "^8.6.12",

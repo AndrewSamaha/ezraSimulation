@@ -142,18 +142,4 @@ export const Large: Story = {
   }
 };
 
-// Add this compatibility layer for Ladle
-// This ensures the same file works with both Storybook and Ladle
-if (typeof window !== 'undefined') {
-  // Check if we're in Ladle
-  const isLadle = !!(window as any).__LADLE__;
-  
-  if (isLadle) {
-    // Re-export for Ladle in the format it expects
-    (Plant as any).ladleRender = Plant.render;
-    (Herbivore as any).ladleRender = Herbivore.render;
-    (Nutrience as any).ladleRender = Nutrience.render;
-    (MovingFast as any).ladleRender = MovingFast.render;
-    (Large as any).ladleRender = Large.render;
-  }
-}
+
