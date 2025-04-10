@@ -15,7 +15,7 @@ export enum ObjectTypeEnum {
 }
 
 // Define object types as an array of strings
-const ObjectTypes = [ObjectTypeEnum.ORGANISM, ObjectTypeEnum.NUTRIENCE] as const;
+export const ObjectTypes = [ObjectTypeEnum.ORGANISM, ObjectTypeEnum.NUTRIENCE] as const;
 
 // Create a TypeScript type from the ObjectTypes array
 type ObjectType = typeof ObjectTypes[number];

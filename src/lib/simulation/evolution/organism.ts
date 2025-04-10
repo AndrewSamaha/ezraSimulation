@@ -2,36 +2,40 @@
 // Allele might be more accurate?
 // Genes might be more accurate? Let's just think of this as a genotype
 
-import { SimulationObject } from "@/context/SimulationContext";
+import { SimulationObject, ObjectTypeEnum, ObjectTypes } from "@/context/SimulationContext";
 
 export type Genotype = number[];
 
-export interface DNA {
-  visualSearch: Genotype;   // How often the organism performs visual searches
-//   nutrienceAwareness: Genotype; // How often the organism looks for nutrience in a visual search
-//   organismAwareness: Genotype; // How often the organism looks for other organisms in a visual search
+// Create mapped types that will automatically add properties for each object type
+export type AffinityMap = {
+  [K in ObjectTypeEnum as `${K}Affinity`]: Genotype;
+};
 
-  nutrienceAffinity: Genotype;  // How often the organism approaches nutrience
-  organismAffinity: Genotype;  // How often the organism approaches another organism
+export type EatingMap = {
+  [K in ObjectTypeEnum as `${K}Eating`]: Genotype;
+};
 
-  nutrienceEating: Genotype;  // How often the organism consumes nutrience that is nearby
-  organismEating: Genotype;  // How often the organism consumes another organism that is nearby
-
-  stayEarningMultiplier: Genotype; // How much energy the organism earns by staying still
-  eatEarningMultiplier: Genotype; // How much energy the organism earns by consuming
-
+// Combine them into the DNA interface
+export interface DNA extends AffinityMap, EatingMap {
+  visualSearch: Genotype;
+  stayEarningMultiplier: Genotype;
+  eatEarningMultiplier: Genotype;
   energyGiftToOffspring: Genotype;
   reproductionProbability: Genotype;
   minimumEnergyToReproduce: Genotype;
+  lineageName: string;
 };
 
 export const isDNA = (obj: any): obj is DNA => {
-  return obj !== null && typeof obj === 'object' && 'visualSearch' in obj && 'nutrienceAffinity' in obj && 'organismAffinity' in obj && 'nutrienceEating' in obj && 'organismEating' in obj && 'stayEarningMultiplier' in obj && 'eatEarningMultiplier' in obj && 'energyGiftToOffspring' in obj;
+  return obj !== null && typeof obj === 'object' && 'visualSearch' in obj && 'stayEarningMultiplier' in obj && 'eatEarningMultiplier' in obj && 'energyGiftToOffspring' in obj && 'reproductionProbability' in obj && 'minimumEnergyToReproduce' in obj;
 }
 
 export const expressGene = (source: DNA | SimulationObject, gene: keyof DNA): number => {
   const sampleDNA: DNA = isDNA(source) ? source : (source as SimulationObject).dna!;
   const randomIndex = Math.floor(Math.random() * sampleDNA[gene].length);
+  if (gene === 'lineageName') {
+    throw new Error('Cannot express gene lineageName');
+  }
   return sampleDNA[gene][randomIndex];
 };
 
@@ -41,18 +45,37 @@ export interface PhenotypeRange {
   default: number
 }
 
-export const PhenotypeRanges: Record<keyof DNA, PhenotypeRange> = {
+// Base phenotype ranges for standard properties
+const basePhenotypeRanges: Partial<Record<keyof DNA, PhenotypeRange>> = {
   visualSearch: { min: 0, max: 1, default: 0 },
-  nutrienceAffinity: { min: -1, max: 1, default: 0 },
-  organismAffinity: { min: -1, max: 1, default: 0 },
-  nutrienceEating: { min: -1, max: 1, default: 0 },
-  organismEating: { min: -1, max: 1, default: 0 },
   stayEarningMultiplier: { min: 0, max: 10, default: 1 },
   eatEarningMultiplier: { min: 0, max: 10, default: 1 },
   energyGiftToOffspring: { min: 0, max: 1, default: 0.5 },
   reproductionProbability: { min: 0.00001, max: 0.1, default: 0.033 },
   minimumEnergyToReproduce: { min: 0, max: 1000, default: 25 }
 };
+
+// Function to create a complete PhenotypeRanges object with dynamic properties
+const createPhenotypeRanges = (): Record<keyof DNA, PhenotypeRange> => {
+  // Start with the base ranges
+  const ranges = { ...basePhenotypeRanges } as Record<keyof DNA, PhenotypeRange>;
+  
+  // Add ranges for each object type's affinity and eating properties
+  // Use direct string values to avoid circular dependencies or SSR issues
+  const objectTypes = ['organism', 'nutrience'] as const;
+  objectTypes.forEach((type) => {
+    // Add ranges for affinity (how likely to approach this type)
+    ranges[`${type}Affinity` as keyof DNA] = { min: -1, max: 1, default: 0 };
+    
+    // Add ranges for eating (how likely to eat this type)
+    ranges[`${type}Eating` as keyof DNA] = { min: -1, max: 1, default: 0 };
+  });
+  
+  return ranges;
+};
+
+// Create the dynamic PhenotypeRanges object
+export const PhenotypeRanges = createPhenotypeRanges();
 
 // Mutation
 // Here's mutation function for the DNA to work with
@@ -73,40 +96,32 @@ export const PhenotypeRanges: Record<keyof DNA, PhenotypeRange> = {
 // What are our phenotype values? So far we have movement & possibly vision.
 
 export const PLANT_DNA_TEMPLATE: DNA = {
-  visualSearch: [0],
-  nutrienceAffinity: [0],
   organismAffinity: [0],
-  nutrienceEating: [0],
+  nutrienceAffinity: [0],
   organismEating: [0],
+  nutrienceEating: [0],
+  visualSearch: [0],
   stayEarningMultiplier: [5],
   eatEarningMultiplier: [0],
   energyGiftToOffspring: [0.5],
   reproductionProbability: [0.033],
-  minimumEnergyToReproduce: [25]
+  minimumEnergyToReproduce: [25],
+  lineageName: 'Plant'
 };
 
 export const HERBIVORE_DNA_TEMPLATE: DNA = {
-  visualSearch: [0],
+  organismAffinity: [0],
   nutrienceAffinity: [0],
-  organismAffinity: [1],
-  nutrienceEating: [1],
-  organismEating: [1],
+  organismEating: [0],
+  nutrienceEating: [0],
+  visualSearch: [0],
   stayEarningMultiplier: [1],
   eatEarningMultiplier: [5],
   energyGiftToOffspring: [0.5],
   reproductionProbability: [0.011],
-  minimumEnergyToReproduce: [200]
+  minimumEnergyToReproduce: [200],
+  lineageName: 'Herbivore'
 };
-
-// export const CARNIVORE_DNA_TEMPLATE: DNA = {
-//   visualSearch: [0],
-//   nutrienceAffinity: [0],
-//   organismAffinity: [1],
-//   nutrienceEating: [0],
-//   organismEating: [1],
-//   stayEarningMultiplier: [1],
-//   eatEarningMultiplier: [2]
-// };
 
 /**
  * Mutates the provided DNA by randomly changing values based on the mutation rate.
@@ -135,7 +150,7 @@ export const mutateDNA = (dna: DNA, mutationRate: number, mutationMagnitude: num
   const newDNA: DNA = JSON.parse(JSON.stringify(dna));
   
   // Iterate through each trait in the DNA object
-  (Object.keys(newDNA) as Array<keyof DNA>).forEach(trait => {
+  (Object.keys(newDNA) as Array<keyof DNA>).filter((trait) => trait !== 'lineageName').forEach(trait => {
     const genotypes = newDNA[trait];
     const randomIndex = Math.floor(Math.random() * genotypes.length);
     if (Math.random() < mutationRate) {
@@ -145,7 +160,9 @@ export const mutateDNA = (dna: DNA, mutationRate: number, mutationMagnitude: num
       
       // Ensure the value stays within valid range
       const range = PhenotypeRanges[trait];
-      newDNA[trait][randomIndex] = Math.max(range.min, Math.min(range.max, newDNA[trait][randomIndex]));
+      if (range) {
+        newDNA[trait][randomIndex] = Math.max(range.min, Math.min(range.max, newDNA[trait][randomIndex]));
+      }
     }
     if (Math.random() < copyGeneRate) {
       // Copy: Randomly copy a gene from another genotype
