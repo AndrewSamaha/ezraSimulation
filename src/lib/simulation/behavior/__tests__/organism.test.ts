@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import Victor from 'victor';
-import { findNearestNutrient, findNearestObject } from '../organism';
+import { findNearestNutrient, findNearestObject, getRandomObjectSample } from '../organism';
 import { SimulationObject, ObjectTypeEnum } from '@/context/SimulationContext';
 
 // Helper function to create test objects
@@ -114,7 +114,7 @@ describe('findNearestObject', () => {
     ];
 
     // Don't include the current organism in the search
-    const filteredObjects = allObjects.filter(obj => obj.id !== organism.id);
+    const filteredObjects = allObjects.filter((obj) => obj.id !== organism.id);
     const result = findNearestObject(organism, filteredObjects, ObjectTypeEnum.ORGANISM);
     
     expect(result).not.toBeNull();
@@ -151,7 +151,7 @@ describe('findNearestObject', () => {
     ];
 
     // Filter out the current organism from the search
-    const filteredObjects = allObjects.filter(obj => obj.id !== organism.id);
+    const filteredObjects = allObjects.filter((obj) => obj.id !== organism.id);
     const result = findNearestObject(organism, filteredObjects, ObjectTypeEnum.ORGANISM);
     
     expect(result).not.toBeNull();

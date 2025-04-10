@@ -9,8 +9,9 @@ import { expressGene } from '@/lib/simulation/evolution/organism';
 import { ActionTypeEnum } from '@/lib/simulation/behavior/actions';
 
 const MAX_ORGANISM = 50;
-const MUTATION_RATE = 0.5
+const MUTATION_RATE = 0.5;
 const DEFAULT_ENERGY_GIFT = 100;
+const RANDOM_SAMPLE_SIZE = 5;
 
 export const createNewOrganism = (sampleSource: DNA | SimulationObject, mutationRate: number = MUTATION_RATE): SimulationObject => {
   const sampleDNA: DNA = isDNA(sampleSource) ? sampleSource : (sampleSource as SimulationObject).dna!;
@@ -30,12 +31,12 @@ export const createNewOrganism = (sampleSource: DNA | SimulationObject, mutation
     parentId: isDNA(sampleSource) ? null : (sampleSource as SimulationObject).id,
     energy,
     actionHistory: [],
-    dna
+    dna,
   };
 };
 
 export const findNearestObject = (cur: SimulationObject, allObjects: SimulationObject[], objectType: ObjectTypeEnum) => {
-  const filteredObjects = allObjects.filter(o => o.objectType === objectType);
+  const filteredObjects = allObjects.filter((o) => o.objectType === objectType);
   if (filteredObjects.length === 0) {
     return null;
   }
@@ -43,15 +44,15 @@ export const findNearestObject = (cur: SimulationObject, allObjects: SimulationO
     const distance = cur.vector.distance(curr.vector);
     return distance < cur.vector.distance(prev.vector) ? curr : prev;
   }, filteredObjects[0]);
-}
+};
 
 // Keeping the original function for backward compatibility
 export const findNearestNutrient = (cur: SimulationObject, allObjects: SimulationObject[]) => {
   return findNearestObject(cur, allObjects, ObjectTypeEnum.NUTRIENCE);
-}
+};
 
 const shouldReproduce = (obj: SimulationObject, allObjects: SimulationObject[]) => {
-  const organismCount = allObjects.filter(o => o.objectType === ObjectTypeEnum.ORGANISM).length;
+  const organismCount = allObjects.filter((o) => o.objectType === ObjectTypeEnum.ORGANISM).length;
 
   if (organismCount >= MAX_ORGANISM) {
     return false;
@@ -66,7 +67,7 @@ const shouldReproduce = (obj: SimulationObject, allObjects: SimulationObject[]) 
     return false;
   }
   return true;
-}
+};
 
 // Should we create vectors for just the nearest things, or all the things?
 const createAffinityVector = (cur: SimulationObject, target: SimulationObject) => {
@@ -75,8 +76,20 @@ const createAffinityVector = (cur: SimulationObject, target: SimulationObject) =
     return new Victor(0, 0);
   }
   return nearest.vector.subtract(cur.vector);
-}
-  
+};
+
+export const getRandomObjectSample = (cur: SimulationObject, allObjects: SimulationObject[], intendedSampleSize: number = RANDOM_SAMPLE_SIZE) => {
+  const sampleSize = intendedSampleSize + 1;
+  if (sampleSize >= allObjects.length) return allObjects.filter((o) => o.id !== cur.id);
+  const sample: SimulationObject[] = [];
+  while (sample.length < sampleSize) {
+    const randomObject = allObjects[Math.floor(Math.random() * allObjects.length)];
+    if (randomObject.id !== cur.id && !sample.includes(randomObject)) {
+      sample.push(randomObject);
+    }
+  }
+  return sample;
+};
 
 /**
  * Apply nutrience-specific behaviors and return an array that can contain the original object
@@ -90,7 +103,7 @@ const createAffinityVector = (cur: SimulationObject, target: SimulationObject) =
 export function doOrganismThings(
   obj: SimulationObject, 
   allObjects: SimulationObject[],
-  metricsCollector?: Record<string, number[]>
+  metricsCollector?: Record<string, number[]>,
 ): SimulationObject[] | { objects: SimulationObject[], duration: number } {
   // Start timing
   const startTime = performance.now();
@@ -117,7 +130,7 @@ export function doOrganismThings(
       return true;
     }
     return false;
-  }
+  };
 
   if (shouldDie()) {
     // Calculate duration before returning
