@@ -108,6 +108,20 @@ export function Drawer({ isOpen, onClose, selectedObject }: DrawerProps) {
               <div className="truncate">{selectedObject.parentId || 'None'}</div>
             </div>
             
+            {/* DNA Information */}
+            {selectedObject.dna && (
+              <div className="mt-6">
+                <details className="mt-4">
+                  <summary className="cursor-pointer p-2 bg-gray-800 rounded">
+                    View DNA Information
+                  </summary>
+                  <pre className="p-2 bg-gray-950 rounded mt-2 text-xs overflow-auto max-h-60 border border-gray-800">
+                    {JSON.stringify(selectedObject.dna, null, 2)}
+                  </pre>
+                </details>
+              </div>
+            )}
+            
             {/* JSON representation for debugging */}
             <div className="mt-6">
               <details className="mt-4">
