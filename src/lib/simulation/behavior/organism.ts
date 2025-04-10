@@ -91,6 +91,19 @@ export const getRandomObjectSample = (cur: SimulationObject, allObjects: Simulat
   return sample;
 };
 
+export const calcForce = (cur: SimulationObject, target: SimulationObject) => {
+  const affinityValue = cur.dna!.affinity[target.objectType];
+  const affinityVector = createAffinityVector(cur, target);
+  return affinityValue * affinityVector;
+};
+
+const shouldDie = (obj: SimulationObject) => {
+  if (obj.energy <= 0) {
+    return true;
+  }
+  return false;
+};
+
 /**
  * Apply nutrience-specific behaviors and return an array that can contain the original object
  * plus any new objects created (e.g., reproduction, spawning resources, etc.)
@@ -125,14 +138,7 @@ export function doOrganismThings(
 
   const returnArray: SimulationObject[] = [];
 
-  const shouldDie = () => {
-    if (obj.energy <= 0) {
-      return true;
-    }
-    return false;
-  };
-
-  if (shouldDie()) {
+  if (shouldDie(obj)) {
     // Calculate duration before returning
     if (metricsCollector) {
       const duration = performance.now() - startTime;
@@ -144,6 +150,8 @@ export function doOrganismThings(
     }
     return returnArray;
   }
+
+  const objectSample = getRandomObjectSample(obj, allObjects);
 
   if (shouldReproduce(obj, allObjects)) {
     const newOrganism = createNewOrganism(obj);
