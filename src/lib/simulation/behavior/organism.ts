@@ -92,9 +92,13 @@ export const getRandomObjectSample = (cur: SimulationObject, allObjects: Simulat
 };
 
 export const calcForce = (cur: SimulationObject, target: SimulationObject) => {
-  const affinityValue = cur.dna!.affinity[target.objectType];
-  const affinityVector = createAffinityVector(cur, target);
-  return affinityValue * affinityVector;
+  const affinityValue = expressGene(cur.dna!, `${target.objectType}Affinity`);
+  const affinityDistance = cur.vector.distance(target.vector);
+  const normalizedTargetPosition = cur.vector.subtract(target.vector).normalize();
+  const distanceSquared = affinityDistance * affinityDistance;
+  const force = affinityValue / distanceSquared;
+  const forceVector = normalizedTargetPosition.multiply(new Victor(force, force));
+  return forceVector;
 };
 
 const shouldDie = (obj: SimulationObject) => {
