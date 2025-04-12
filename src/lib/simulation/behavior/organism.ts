@@ -70,15 +70,6 @@ const shouldReproduce = (obj: SimulationObject, allObjects: SimulationObject[]) 
   return true;
 };
 
-// Should we create vectors for just the nearest things, or all the things?
-const createAffinityVector = (cur: SimulationObject, target: SimulationObject) => {
-  const nearest = findNearestObject(cur, [target], target.objectType);
-  if (!nearest) {
-    return new Victor(0, 0);
-  }
-  return nearest.vector.subtract(cur.vector);
-};
-
 export const getRandomObjectSample = (cur: SimulationObject, allObjects: SimulationObject[], intendedSampleSize: number = RANDOM_SAMPLE_SIZE) => {
   const sampleSize = intendedSampleSize + 1;
   if (sampleSize >= allObjects.length) return allObjects.filter((o) => o.id !== cur.id);
@@ -106,6 +97,14 @@ export const calcForce = (cur: SimulationObject, target: SimulationObject) => {
   const curVector = cur.vector;
   const targetVector = target.vector;
   return calcForceWithAffinity(curVector, targetVector, affinityValue);
+};
+
+export const calcForceFromObjectArray = (cur: SimulationObject, objects: SimulationObject[]) => {
+  const force = new Victor(0, 0);
+  objects.forEach((obj) => {
+    force.add(calcForce(cur, obj));
+  });
+  return force;
 };
 
 const shouldDie = (obj: SimulationObject) => {
@@ -163,6 +162,8 @@ export function doOrganismThings(
   }
 
   const objectSample = getRandomObjectSample(obj, allObjects);
+  const force = calcForceFromObjectArray(obj, objectSample);
+  obj.forceInput = force;
 
   if (shouldReproduce(obj, allObjects)) {
     const newOrganism = createNewOrganism(obj);
