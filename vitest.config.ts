@@ -12,5 +12,7 @@ export default defineConfig({
     alias: {
       '@': resolve(__dirname, './src'),
     },
+    // Exclude story files from tests
+    exclude: ['**/*.stories.*', '**/.storybook/**/*'],
   },
 });

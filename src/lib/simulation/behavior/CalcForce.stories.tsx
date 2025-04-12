@@ -111,7 +111,12 @@ export const CalcForceSandbox = () => {
       : HERBIVORE_DNA_TEMPLATE[`${targetObjectType}Affinity`][0]);
   
   // Use the force multiplier parameter
-  const forceVector = calcForceWithAffinity(curObject.vector, targetObject.vector, affinityValue, forceMultiplier);
+  const forceVector = calcForceWithAffinity(
+    curObject.vector, 
+    targetObject.vector, 
+    affinityValue, 
+    forceMultiplier,
+  );
   console.log('forceVector', forceVector);
   // These are the values used in the calcForce function
   
