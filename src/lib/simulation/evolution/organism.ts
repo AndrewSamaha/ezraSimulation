@@ -111,7 +111,7 @@ export const PLANT_DNA_TEMPLATE: DNA = {
 
 export const HERBIVORE_DNA_TEMPLATE: DNA = {
   organismAffinity: [0],
-  nutrienceAffinity: [0],
+  nutrienceAffinity: [1],
   organismEating: [0],
   nutrienceEating: [0],
   visualSearch: [0],

@@ -1,15 +1,21 @@
 'use client';
 
 import { useState } from 'react';
-import { SimulationObject as SimObj, ObjectTypeEnum, useSimulation } from '@/context/SimulationContext';
+import { 
+  SimulationObject as SimObj, 
+  ObjectTypeEnum, 
+  useSimulation 
+} from '@/context/SimulationContext';
 import { Organism } from './Organism';
 import { Nutrience } from './Nutrience';
+import { ForceVector } from './ForceVector';
 
 interface SimulationObjectProps {
   object: SimObj;
+  showForceVector?: boolean;
 }
 
-export function SimulationObject({ object: obj }: SimulationObjectProps) {
+export function SimulationObject({ object: obj, showForceVector = false }: SimulationObjectProps) {
   const [isHovered, setIsHovered] = useState(false);
   const { dispatch, state } = useSimulation();
   const isSelected = state.selectedObjectId === obj.id;
@@ -41,13 +47,19 @@ export function SimulationObject({ object: obj }: SimulationObjectProps) {
       {/* Render the appropriate component based on object type */}
       {renderAppropriateComponent()}
       
+      {/* Force vector arrow (if enabled) */}
+      {showForceVector && obj.forceInput && (
+        <ForceVector force={obj.forceInput} />
+      )}
+      
       {/* Information annotation below the object - only visible on hover */}
       {isHovered && (
         <div 
-          className="absolute transform -translate-x-1/2 text-white text-xs bg-black/70 p-1 px-2 rounded text-center z-10 pointer-events-none whitespace-nowrap transition-opacity duration-200"
+          className="absolute transform -translate-x-1/2 text-white text-xs bg-black/70 p-1 px-2 rounded 
+            text-center z-10 pointer-events-none whitespace-nowrap transition-opacity duration-200"
           style={{ 
             left: 0, 
-            top: `${(obj.size || 50) + 5}px`
+            top: `${(obj.size || 50) + 5}px`,
           }}
         >
           <div>Type: {obj.objectType}</div>

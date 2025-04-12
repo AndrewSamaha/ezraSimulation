@@ -12,6 +12,7 @@ const MAX_ORGANISM = 50;
 const MUTATION_RATE = 0.5;
 const DEFAULT_ENERGY_GIFT = 100;
 const RANDOM_SAMPLE_SIZE = 5;
+const AFFINITY_FORCE_MULTIPLIER = 10_000;
 
 export const createNewOrganism = (sampleSource: DNA | SimulationObject, mutationRate: number = MUTATION_RATE): SimulationObject => {
   const sampleDNA: DNA = isDNA(sampleSource) ? sampleSource : (sampleSource as SimulationObject).dna!;
@@ -91,14 +92,20 @@ export const getRandomObjectSample = (cur: SimulationObject, allObjects: Simulat
   return sample;
 };
 
-export const calcForce = (cur: SimulationObject, target: SimulationObject) => {
-  const affinityValue = expressGene(cur.dna!, `${target.objectType}Affinity`);
-  const affinityDistance = cur.vector.distance(target.vector);
-  const normalizedTargetPosition = cur.vector.subtract(target.vector).normalize();
+export const calcForceWithAffinity = (curVector: Victor, targetVector: Victor, affinityValue: number, forceMultiplier: number = AFFINITY_FORCE_MULTIPLIER) => {
+  const affinityDistance = curVector.distance(targetVector);
+  const normalizedTargetPosition = targetVector.subtract(curVector).normalize();
   const distanceSquared = affinityDistance * affinityDistance;
-  const force = affinityValue / distanceSquared;
+  const force = forceMultiplier * affinityValue / distanceSquared;
   const forceVector = normalizedTargetPosition.multiply(new Victor(force, force));
   return forceVector;
+};
+
+export const calcForce = (cur: SimulationObject, target: SimulationObject) => {
+  const affinityValue = expressGene(cur.dna!, `${target.objectType}Affinity`);
+  const curVector = cur.vector;
+  const targetVector = target.vector;
+  return calcForceWithAffinity(curVector, targetVector, affinityValue);
 };
 
 const shouldDie = (obj: SimulationObject) => {
