@@ -67,6 +67,27 @@ export function Drawer({ isOpen, onClose, selectedObject, allObjects, dispatch }
           </button>
         </div>
         
+        {/* Object Selection Dropdown */}
+        <div className="p-4 border-b border-gray-700">
+          <label htmlFor="object-select" className="block text-sm font-medium mb-2">
+            Select Object:
+          </label>
+          <select 
+            id="object-select" 
+            value={selectedObject.id}
+            onChange={handleObjectSelect}
+            className="w-full bg-gray-800 border border-gray-700 rounded p-2 text-white"
+          >
+            {allObjects.map((obj) => (
+              <option key={obj.id} value={obj.id}>
+                {obj.objectType.charAt(0).toUpperCase() + obj.objectType.slice(1)}{' '}
+                {obj.id.substring(0, 8)}...{' '}
+                {obj.dna ? `(${obj.dna.lineageName || 'Unknown'})` : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+        
         {/* Content */}
         <div className="p-4">
           <div className="space-y-4">
