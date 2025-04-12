@@ -32,32 +32,14 @@ export function Drawer({ isOpen, onClose, selectedObject, allObjects, dispatch }
     <>
       {/* Drawer panel only - no backdrop that blocks controls */}
       <div 
-        className={`fixed right-0 top-0 h-full bg-gray-900 text-white shadow-lg w-96 transform transition-transform duration-300 ease-in-out overflow-auto`}
+        className={'fixed right-0 top-0 h-full bg-gray-900 text-white shadow-lg w-96 transform transition-transform duration-300 ease-in-out overflow-auto'}
         style={{ 
           transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
-          zIndex: 40  // High z-index but not higher than controls
+          zIndex: 40,  // High z-index but not higher than controls
         }}
       >
         {/* Header */}
         <div className="p-4 border-b border-gray-700 flex justify-between items-center">
-          <h2 className="text-xl font-semibold">
-            {selectedObject.objectType.charAt(0).toUpperCase() + selectedObject.objectType.slice(1)} Details
-          </h2>
-          <button 
-            onClick={onClose} 
-            className="rounded-full p-1 hover:bg-gray-700 transition"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        
-        {/* Object Selection Dropdown */}
-        <div className="p-4 border-b border-gray-700">
-          <label htmlFor="object-select" className="block text-sm font-medium mb-2">
-            Select Object:
-          </label>
           <select 
             id="object-select" 
             value={selectedObject.id}
@@ -72,13 +54,24 @@ export function Drawer({ isOpen, onClose, selectedObject, allObjects, dispatch }
               </option>
             ))}
           </select>
+          {/* <h2 className="text-xl font-semibold">
+            {selectedObject.objectType.charAt(0).toUpperCase() + selectedObject.objectType.slice(1)} Details
+          </h2> */}
+          <button 
+            onClick={onClose} 
+            className="rounded-full p-1 hover:bg-gray-700 transition"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
         
         {/* Content */}
         <div className="p-4">
           <div className="space-y-4">
             {/* Object preview */}
-            <div className="flex justify-center mb-6">
+            {/* <div className="flex justify-center mb-6">
               <div 
                 className="rounded-full" 
                 style={{ 
@@ -86,12 +79,12 @@ export function Drawer({ isOpen, onClose, selectedObject, allObjects, dispatch }
                   width: `${selectedObject.size || 20}px`, 
                   height: `${selectedObject.size || 20}px`,
                   border: '2px solid white',
-                  boxShadow: '0 0 15px rgba(255,255,255,0.5)'
+                  boxShadow: '0 0 15px rgba(255,255,255,0.5)',
                 }}
               />
-            </div>
+            </div> */}
             
-            <div className="border-b border-gray-700 mb-4"></div>
+            {/* <div className="border-b border-gray-700 mb-4"></div> */}
             <div className="grid grid-cols-[1fr_2fr] gap-2">
               <div className="font-semibold">ID:</div>
               <div className="truncate font-mono text-xs">{selectedObject.id}</div>
@@ -115,6 +108,9 @@ export function Drawer({ isOpen, onClose, selectedObject, allObjects, dispatch }
               
               <div className="font-semibold">Age:</div>
               <div>{selectedObject.age}</div>
+
+              <div className="font-semibold">Energy:</div>
+              <div>{Math.round(selectedObject.energy)}</div>
               
               <div className="font-semibold">Position:</div>
               <div>{formatVector(selectedObject.vector)}</div>
