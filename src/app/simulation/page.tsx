@@ -269,6 +269,8 @@ export default function SimulationPage() {
         isOpen={!!selectedObject} 
         onClose={handleCloseDrawer} 
         selectedObject={selectedObject}
+        allObjects={state.steps[state.currentStep].objects}
+        dispatch={dispatch}
       />
       
       {/* Invisible overlay that prevents background clicks from closing drawer when using controls */}
