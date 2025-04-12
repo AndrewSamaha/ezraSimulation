@@ -10,10 +10,9 @@
     "lint:fix": "next lint --fix",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,md}\"",
-    "test": "vitest run --environment=node --exclude='**/*.stories.*'",
-    "test:core": "vitest run src/lib/simulation/behavior/__tests__/*.test.ts --environment=node",
-    "test:watch": "vitest --environment=node --exclude='**/*.stories.*'",
-    "test:coverage": "vitest run --environment=node --exclude='**/*.stories.*' --coverage",
+    "test": "vitest run src/lib/simulation/behavior/__tests__ --environment=node",
+    "test:watch": "vitest src/lib/simulation/behavior/__tests__ --environment=node",
+    "test:coverage": "vitest run src/lib/simulation/behavior/__tests__ --environment=node --coverage",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },
