@@ -68,10 +68,9 @@ const shouldReproduce = (obj: SimulationObject, allObjects: SimulationObject[]) 
   if (obj.age <= 20) {
     return false;
   }
-  if (Math.random() < expressGene(obj.dna!, 'reproductionProbability')) {
-    return false;
-  }
-  return true;
+  // FIX: This was backwards! Should return true when random value is LESS than probability
+  // not false. Higher probability should mean MORE likely to reproduce.
+  return Math.random() < expressGene(obj.dna!, 'reproductionProbability');
 };
 
 export const getRandomObjectSample = (cur: SimulationObject, allObjects: SimulationObject[], intendedSampleSize: number = RANDOM_SAMPLE_SIZE) => {
@@ -98,8 +97,10 @@ export const calcForceWithAffinity = (curVector: Victor, targetVector: Victor, a
 
 export const calcForce = (cur: SimulationObject, target: SimulationObject) => {
   const affinityValue = expressGene(cur.dna!, `${target.objectType}Affinity`);
-  const curVector = cur.vector;
-  const targetVector = target.vector;
+  // CRITICAL FIX: Always clone vectors before passing them to force calculations
+  // to prevent inadvertent modification of the original objects
+  const curVector = cur.vector.clone();
+  const targetVector = target.vector.clone();
   return calcForceWithAffinity(curVector, targetVector, affinityValue);
 };
 
@@ -169,15 +170,56 @@ export function doOrganismThings(
   returnArray.push(obj);
   //console.log('        2 doOrganismThings for organism:', obj.id);
   
+  // Create random sample of objects to calculate forces from
   const objectSample = getRandomObjectSample(obj, allObjects);
+  
+  // Calculate force vector based on surrounding objects
   const force = calcForceFromObjectArray(obj, objectSample);
-  obj.forceInput = force;
+  
+  // IMPORTANT: Don't directly assign the force to obj.forceInput as this modifies the original object
+  // Instead, create a clone of the object with the modified values
+  const updatedObj = {
+    ...obj,
+    forceInput: force.clone(), // Clone the force vector to avoid reference issues
+  };
+  
+  // Replace the original object in our return array
+  const originalIndex = returnArray.indexOf(obj);
+  if (originalIndex !== -1) {
+    returnArray[originalIndex] = updatedObj;
+  } else {
+    // If not found (shouldn't happen, but just in case)
+    returnArray.push(updatedObj);
+    console.warn('Original object not found in return array. This should not happen.');
+  }
 
-  if (shouldReproduce(obj, allObjects)) {
-    const newOrganism = createNewOrganism(obj);
+  // IMPORTANT: Use the updated object instead of the original
+  const currentObj = returnArray.find((o) => o.id === obj.id) || obj;
+  
+  if (shouldReproduce(currentObj, allObjects)) {
+    // Create new organism with a completely independent set of vectors
+    const newOrganism = createNewOrganism(currentObj);
     const lostEnergy = newOrganism.energy;
-    obj.energy -= lostEnergy;
-    obj.actionHistory.unshift(ActionTypeEnum.REPRODUCE);
+    
+    // Create a new updated object with reduced energy and updated action history
+    // instead of modifying the original
+    const updatedAfterReproduction = {
+      ...currentObj,
+      energy: currentObj.energy - lostEnergy,
+      actionHistory: [ActionTypeEnum.REPRODUCE, ...currentObj.actionHistory],
+      // Make sure we clone these vectors to avoid any reference issues
+      vector: currentObj.vector.clone(),
+      velocity: currentObj.velocity.clone(),
+      forceInput: currentObj.forceInput.clone(),
+    };
+    
+    // Replace the current object in the return array
+    const currentIndex = returnArray.indexOf(currentObj);
+    if (currentIndex !== -1) {
+      returnArray[currentIndex] = updatedAfterReproduction;
+    }
+    
+    // Add the new organism to the return array
     returnArray.push(newOrganism);
   }
 

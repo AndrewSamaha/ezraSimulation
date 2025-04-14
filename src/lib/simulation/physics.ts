@@ -53,24 +53,50 @@ export function doPhysics(obj: SimulationObject): SimulationObject {
     velocity = velocity.invertY(); // Bounce by reversing y velocity
     console.log('  bouncing y');
   }
-  const forceInput = new Victor(0,0);
+  // Create a new force input vector
+  const forceInput = new Victor(0, 0);
   
   console.log('  ending position:', position);
-  // console.log('  ending velocity:', velocity);
-  // console.log('  ending forceInput:', forceInput);
+  
+  // IMPORTANT: Clone the position vector to avoid reference issues
+  // The issue was likely caused by not properly isolating vector references
+  // between the original object and the updated object
   const vector = position.clone();
-  // Return updated object with new position and velocity
+  
+  // SAFEGUARD: Make sure vector values are never extremely close to zero
+  // This prevents the issue where vectors somehow get reset to near-zero values
+  const MIN_POSITION_VALUE = 1.0; // Minimum allowed position value
+  if (Math.abs(vector.x) < MIN_POSITION_VALUE) {
+    console.warn(`Vector x is too small: ${vector.x}, resetting to ${vector.x < 0 ? -MIN_POSITION_VALUE : MIN_POSITION_VALUE}`);
+    vector.x = vector.x < 0 ? -MIN_POSITION_VALUE : MIN_POSITION_VALUE;
+  }
+  if (Math.abs(vector.y) < MIN_POSITION_VALUE) {
+    console.warn(`Vector y is too small: ${vector.y}, resetting to ${vector.y < 0 ? -MIN_POSITION_VALUE : MIN_POSITION_VALUE}`);
+    vector.y = vector.y < 0 ? -MIN_POSITION_VALUE : MIN_POSITION_VALUE;
+  }
+  
+  // Create a completely new object instead of using spread operator on the original
+  // This ensures we don't carry over any unexpected behaviors from the original object
   const updatedObject = {
-    ...obj,
+    id: obj.id,
+    objectType: obj.objectType,
+    color: obj.color,
+    size: obj.size,
     age: obj.age + 1,
-    vector,
-    velocity: velocity.clone(),
-    forceInput,
+    vector: vector, // Use the cloned vector
+    velocity: velocity.clone(), // Clone the velocity vector
+    forceInput: forceInput, // Use the new force input vector
+    parentId: obj.parentId,
+    energy: obj.energy,
+    actionHistory: [...obj.actionHistory], // Create a new array to avoid reference issues
+    dna: obj.dna, // DNA references are probably fine as they're not mutated
   };
+  
   console.log('  updated object:', updatedObject);
   console.log('  updatedOpject.vector:', updatedObject.vector);
   console.log('  position:', position);
   console.log('  position.clone():', position.clone());
   console.log('  updated object2:', updatedObject);
+  
   return updatedObject;
 }
