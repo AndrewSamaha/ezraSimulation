@@ -7,6 +7,7 @@ import { createNewNutrience } from '@/lib/simulation/behavior/nutrience';
 import { DNA, HERBIVORE_DNA_TEMPLATE, PLANT_DNA_TEMPLATE } from '@/lib/simulation/evolution/organism';
 import { createNewOrganism } from '@/lib/simulation/behavior/organism';
 import { ActionType } from '@/lib/simulation/behavior/actions';
+import { v4 as uuid } from 'uuid';
 
 // Create an enum from the ObjectTypes
 export enum ObjectTypeEnum {
@@ -62,6 +63,7 @@ export interface PerformanceMetrics {
 
 // Define the overall simulation state
 export interface SimulationState {
+  id: string;
   currentStep: number;
   steps: SimulationStep[];
   isRunning: boolean;
@@ -88,6 +90,7 @@ type SimulationAction =
 
 // Empty initial state for server-side rendering
 const emptyInitialState: SimulationState = {
+  id: uuid(),
   currentStep: 0,
   steps: [{ objects: [] }],
   isRunning: false,
@@ -106,13 +109,14 @@ const emptyInitialState: SimulationState = {
 
 // Function to create the actual initial state (only called on client-side)
 const createInitialState = (): SimulationState => ({
+  id: uuid(),
   currentStep: 0,
   steps: [
     {
       objects: [
-        ...Array.from({ length: 5 }, () => createNewNutrience()),
+        //...Array.from({ length: 5 }, () => createNewNutrience()),
         createNewOrganism(PLANT_DNA_TEMPLATE),
-        createNewOrganism(HERBIVORE_DNA_TEMPLATE),
+        //createNewOrganism(HERBIVORE_DNA_TEMPLATE),
       ],
     },
   ],
@@ -156,6 +160,8 @@ function simulationReducer(state: SimulationState, action: SimulationAction): Si
   }
 
   case 'NEXT_STEP': {
+    console.log('NEXT_STEP', state.currentStep, state.id);
+    console.log('  num organisms:', state.steps[state.currentStep].objects.filter((o) => o.objectType === ObjectTypeEnum.ORGANISM).length);
     // If we're at the last known step, we need to calculate the next step
     if (state.currentStep >= state.steps.length - 1) {
       // Calculate new positions based on vector movement and collisions using our extracted physics
@@ -207,7 +213,9 @@ function simulationReducer(state: SimulationState, action: SimulationAction): Si
           updatedSelectedObjectId = selectedInNewStep.id;
         }
       }
-        
+      console.log('  num organisms at end:', state.steps[state.currentStep].objects.filter((o) => o.objectType === ObjectTypeEnum.ORGANISM).length);
+      console.log('  newStep:')
+      console.dir(newStep)
       return {
         ...state,
         steps: [...state.steps, newStep],
@@ -225,6 +233,7 @@ function simulationReducer(state: SimulationState, action: SimulationAction): Si
         },
       };
     } else {
+      console.log('  in precalculated step')
       // Just move to the next pre-calculated step, maintaining the selected object
       // Check if we need to update the selected object's ID in the next step
       let updatedSelectedObjectId = state.selectedObjectId;

@@ -37,16 +37,22 @@ export function calculateNextStep(currentStep: SimulationStep): { step: Simulati
   
   // Create metrics collector for organism calculations
   const metricsCollector: Record<string, number[]> = {
-    organismCalculations: []
+    organismCalculations: [],
   };
   
   // Modified organism processor to collect timing metrics
   const organismProcessor = (objects: SimulationObject[]): SimulationObject[] => {
-    return objects.reduce<SimulationObject[]>((acc, obj) => {
+    console.log('  organism processor');
+    console.log('    input objects:');
+    console.dir(objects);
+    const newObjects = objects.reduce<SimulationObject[]>((acc, obj) => {
       if (obj.objectType === ObjectTypeEnum.ORGANISM) {
         const result = doOrganismThings(obj, objects, metricsCollector);
         if ('objects' in result) {
           return [...acc, ...result.objects];
+        } else {
+          console.log('No objects returned from doOrganismThings');
+          return acc;
         }
       }
       
@@ -54,21 +60,32 @@ export function calculateNextStep(currentStep: SimulationStep): { step: Simulati
       const result = doNutrienceThings(obj, objects);
       return [...acc, ...result];
     }, []);
+    console.log('    output objects:');
+    console.dir(newObjects);
+    return newObjects;
   };
   
   // Define processors with our new organism processor
   const frameProcessors = [
     // Apply physics to all objects
-    (objects: SimulationObject[]) => objects.map(doPhysics),
+    (objects: SimulationObject[]) => {
+      console.log('  physics processor');
+      console.log('    input objects:');
+      console.dir(objects);
+      const newObjects = objects.map(doPhysics);
+      console.log('    output objects:');
+      console.dir(newObjects);
+      return newObjects;
+    },
     
     // Apply behavior processors
-    organismProcessor
+    organismProcessor,
   ];
   
   // Run each processor in sequence, passing the results from one to the next
   const newObjects = frameProcessors.reduce(
     (objects, processor) => processor(objects),
-    currentStep.objects
+    currentStep.objects,
   );
   
   // Calculate frame duration
@@ -77,12 +94,12 @@ export function calculateNextStep(currentStep: SimulationStep): { step: Simulati
   // Return a new step with the updated objects and metrics
   return {
     step: {
-      objects: newObjects
+      objects: newObjects,
     },
     metrics: {
       frameDuration,
-      organismCalculationTimes: metricsCollector.organismCalculations
-    }
+      organismCalculationTimes: metricsCollector.organismCalculations,
+    },
   };
 }
   

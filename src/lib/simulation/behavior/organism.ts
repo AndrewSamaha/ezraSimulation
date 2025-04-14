@@ -10,25 +10,29 @@ import { ActionTypeEnum } from '@/lib/simulation/behavior/actions';
 
 const MAX_ORGANISM = 50;
 const MUTATION_RATE = 0.5;
-const DEFAULT_ENERGY_GIFT = 100;
+const DEFAULT_ENERGY_GIFT = 30;
 const RANDOM_SAMPLE_SIZE = 5;
-const AFFINITY_FORCE_MULTIPLIER = 10_000;
+const AFFINITY_FORCE_MULTIPLIER = 100;
 
 export const createNewOrganism = (sampleSource: DNA | SimulationObject, mutationRate: number = MUTATION_RATE): SimulationObject => {
   const sampleDNA: DNA = isDNA(sampleSource) ? sampleSource : (sampleSource as SimulationObject).dna!;
-  const position = isDNA(sampleSource) ? new Victor(Math.random() * CONTAINER_WIDTH, Math.random() * CONTAINER_HEIGHT) : (sampleSource as SimulationObject).vector;
+  const position = new Victor(Math.random() * CONTAINER_WIDTH, Math.random() * CONTAINER_HEIGHT); 
+  //isDNA(sampleSource) ? new Victor(Math.random() * CONTAINER_WIDTH, Math.random() * CONTAINER_HEIGHT) : (sampleSource as SimulationObject).vector.clone();
   const forceInput = new Victor(Math.random() * 20 - 10, Math.random() * 20 - 10).multiply(new Victor(.2, .2));
   const dna = mutateDNA(sampleDNA, mutationRate);
   const energy = isDNA(sampleSource) ? DEFAULT_ENERGY_GIFT : (sampleSource as SimulationObject).energy * expressGene(dna, 'energyGiftToOffspring');
+  const id = uuid();
+  console.log('creating organism with id:', id);
+  console.log('  at position:', position);
   return {
-    id: uuid(),
+    id,
     objectType: ObjectTypeEnum.ORGANISM,
     color: 'green',
     size: 10,
     age: 0,
     vector: position,
     velocity: new Victor(0, 0),
-    forceInput,
+    forceInput: forceInput || new Victor(0,0),
     parentId: isDNA(sampleSource) ? null : (sampleSource as SimulationObject).id,
     energy,
     actionHistory: [],
@@ -130,6 +134,8 @@ export function doOrganismThings(
 ): SimulationObject[] | { objects: SimulationObject[], duration: number } {
   // Start timing
   const startTime = performance.now();
+  //console.log('        0 doOrganismThings for organism:', obj.id);
+  //console.log('        0.1 position:', obj.vector);
   
   // Skip non-organism objects
   if (obj.objectType !== ObjectTypeEnum.ORGANISM) {
@@ -147,7 +153,7 @@ export function doOrganismThings(
   }
 
   const returnArray: SimulationObject[] = [];
-
+  //console.log('        1 doOrganismThings for organism:', obj.id);
   if (shouldDie(obj)) {
     // Calculate duration before returning
     if (metricsCollector) {
@@ -160,7 +166,9 @@ export function doOrganismThings(
     }
     return returnArray;
   }
-
+  returnArray.push(obj);
+  //console.log('        2 doOrganismThings for organism:', obj.id);
+  
   const objectSample = getRandomObjectSample(obj, allObjects);
   const force = calcForceFromObjectArray(obj, objectSample);
   obj.forceInput = force;
@@ -180,8 +188,9 @@ export function doOrganismThings(
       metricsCollector.organismCalculations = [];
     }
     metricsCollector.organismCalculations.push(duration);
+    //console.log('        3 doOrganismThings for organism:', obj.id);
     return { objects: returnArray, duration };
   }
-  
+  //console.log('        4 doOrganismThings for organism:', obj.id);  
   return returnArray;
 }
