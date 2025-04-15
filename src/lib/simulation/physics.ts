@@ -26,8 +26,6 @@ export function doPhysics(obj: SimulationObject): SimulationObject {
   
   // Apply movement: add velocity to position
   const newPosition = position.add(velocity);
-  const distance = position.distance(newPosition);
-  console.log('  MOVE',position, newPosition, distance);
   position = newPosition;
 
   // Get object radius for collision detection
@@ -37,26 +35,26 @@ export function doPhysics(obj: SimulationObject): SimulationObject {
   if (position.x - radius <= 0) {
     position.x = radius; // Prevent going out of bounds
     velocity = velocity.invertX(); // Bounce by reversing x velocity
-    console.log('  bouncing x');
+
   } else if (position.x + radius >= CONTAINER_WIDTH) {
     position.x = CONTAINER_WIDTH - radius; // Prevent going out of bounds
     velocity = velocity.invertX(); // Bounce by reversing x velocity
-    console.log('  bouncing x');
+
   }
   
   if (position.y - radius <= 0) {
     position.y = radius; // Prevent going out of bounds
     velocity = velocity.invertY(); // Bounce by reversing y velocity
-    console.log('  bouncing y');
+
   } else if (position.y + radius >= CONTAINER_HEIGHT) {
     position.y = CONTAINER_HEIGHT - radius; // Prevent going out of bounds
     velocity = velocity.invertY(); // Bounce by reversing y velocity
-    console.log('  bouncing y');
+
   }
   // Create a new force input vector
   const forceInput = new Victor(0, 0);
   
-  console.log('  ending position:', position);
+
   
   // IMPORTANT: Clone the position vector to avoid reference issues
   // The issue was likely caused by not properly isolating vector references
@@ -67,11 +65,11 @@ export function doPhysics(obj: SimulationObject): SimulationObject {
   // This prevents the issue where vectors somehow get reset to near-zero values
   const MIN_POSITION_VALUE = 1.0; // Minimum allowed position value
   if (Math.abs(vector.x) < MIN_POSITION_VALUE) {
-    console.warn(`Vector x is too small: ${vector.x}, resetting to ${vector.x < 0 ? -MIN_POSITION_VALUE : MIN_POSITION_VALUE}`);
+
     vector.x = vector.x < 0 ? -MIN_POSITION_VALUE : MIN_POSITION_VALUE;
   }
   if (Math.abs(vector.y) < MIN_POSITION_VALUE) {
-    console.warn(`Vector y is too small: ${vector.y}, resetting to ${vector.y < 0 ? -MIN_POSITION_VALUE : MIN_POSITION_VALUE}`);
+
     vector.y = vector.y < 0 ? -MIN_POSITION_VALUE : MIN_POSITION_VALUE;
   }
   

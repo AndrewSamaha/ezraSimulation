@@ -22,8 +22,7 @@ export const createNewOrganism = (sampleSource: DNA | SimulationObject, mutation
   const dna = mutateDNA(sampleDNA, mutationRate);
   const energy = isDNA(sampleSource) ? DEFAULT_ENERGY_GIFT : (sampleSource as SimulationObject).energy * expressGene(dna, 'energyGiftToOffspring');
   const id = uuid();
-  console.log('creating organism with id:', id);
-  console.log('  at position:', position);
+  // Create new organism with random position
   return {
     id,
     objectType: ObjectTypeEnum.ORGANISM,
@@ -135,8 +134,7 @@ export function doOrganismThings(
 ): SimulationObject[] | { objects: SimulationObject[], duration: number } {
   // Start timing
   const startTime = performance.now();
-  //console.log('        0 doOrganismThings for organism:', obj.id);
-  //console.log('        0.1 position:', obj.vector);
+
   
   // Skip non-organism objects
   if (obj.objectType !== ObjectTypeEnum.ORGANISM) {
@@ -154,7 +152,7 @@ export function doOrganismThings(
   }
 
   const returnArray: SimulationObject[] = [];
-  //console.log('        1 doOrganismThings for organism:', obj.id);
+
   if (shouldDie(obj)) {
     // Calculate duration before returning
     if (metricsCollector) {
@@ -168,7 +166,7 @@ export function doOrganismThings(
     return returnArray;
   }
   returnArray.push(obj);
-  //console.log('        2 doOrganismThings for organism:', obj.id);
+
   
   // Create random sample of objects to calculate forces from
   const objectSample = getRandomObjectSample(obj, allObjects);
@@ -190,7 +188,7 @@ export function doOrganismThings(
   } else {
     // If not found (shouldn't happen, but just in case)
     returnArray.push(updatedObj);
-    console.warn('Original object not found in return array. This should not happen.');
+    // This shouldn't happen, but we handle it anyway
   }
 
   // IMPORTANT: Use the updated object instead of the original
@@ -230,9 +228,9 @@ export function doOrganismThings(
       metricsCollector.organismCalculations = [];
     }
     metricsCollector.organismCalculations.push(duration);
-    //console.log('        3 doOrganismThings for organism:', obj.id);
+
     return { objects: returnArray, duration };
   }
-  //console.log('        4 doOrganismThings for organism:', obj.id);  
+
   return returnArray;
 }

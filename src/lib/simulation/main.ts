@@ -43,9 +43,7 @@ export function calculateNextStep(currentStep: SimulationStep): { step: Simulati
   
   // Modified organism processor to collect timing metrics and ensure vector integrity
   const organismProcessor = (objects: SimulationObject[]): SimulationObject[] => {
-    console.log('  organism processor');
-    console.log('    input objects:');
-    console.dir(objects);
+
     
     // CRITICAL FIX: Before doing any processing, check for and repair any corrupted vectors,
     // especially for child organisms which seem particularly susceptible to corruption
@@ -53,7 +51,7 @@ export function calculateNextStep(currentStep: SimulationStep): { step: Simulati
       if (!obj.vector || obj.vector.x === 0 || obj.vector.y === 0 || 
           isNaN(obj.vector.x) || isNaN(obj.vector.y)) {
         // Found a corrupted vector
-        console.error(`Found corrupted vector in object ${obj.id} BEFORE processing. Repairing.`);
+        // Vector corruption detected, need to repair
         
         // Try to recreate a valid position - if this is a child object, and we have information
         // about its parent, we can use that
@@ -161,37 +159,17 @@ export function calculateNextStep(currentStep: SimulationStep): { step: Simulati
       return [...acc, ...result];
     }, []);
     
-    console.log('    output objects:');
-    console.dir(newObjects);
+
     return newObjects;
   };
   
-  // Vector diagnosis function to track where corruption happens
-  const diagnoseVectors = (stage: string, objects: SimulationObject[]) => {
-    if (process.env.NODE_ENV !== 'test') return; // Only run in test environment
-    
-    console.log(`\n===== VECTOR DIAGNOSIS: ${stage} =====`);
-    objects.forEach((obj) => {
-      const vectorState = obj.vector ? 
-        `(${obj.vector.x.toFixed(2)}, ${obj.vector.y.toFixed(2)})` : 
-        'UNDEFINED';
-      
-      console.log(`Object ${obj.id.substring(0, 8)}... (${obj.objectType}): ${vectorState}`);
-      
-      // Flag any suspicious values
-      if (!obj.vector || obj.vector.x === 0 || obj.vector.y === 0 || 
-          isNaN(obj.vector.x) || isNaN(obj.vector.y)) {
-        console.error(`===> CORRUPTION DETECTED at ${stage}: Object ${obj.id} has invalid vector: ${vectorState}`);
-      }
-    });
-    console.log('===== END DIAGNOSIS =====\n');
-  };
+
   
   // Define processors with our new organism processor
   const frameProcessors = [
     // IMPORTANT FIX: Add isolation layer to ensure all objects have independent vector references
     (objects: SimulationObject[]) => {
-      console.log('  isolation processor');
+
       // Create deep copies of all objects to ensure complete isolation
       const isolatedObjects = objects.map((obj) => ({
         ...obj,
@@ -201,78 +179,26 @@ export function calculateNextStep(currentStep: SimulationStep): { step: Simulati
         actionHistory: [...obj.actionHistory], // Create a new array of actions
       }));
       
-      // Diagnose after isolation
-      diagnoseVectors('AFTER_ISOLATION', isolatedObjects);
+
       return isolatedObjects;
     },
     
     // Apply physics to all objects
     (objects: SimulationObject[]) => {
-      console.log('  physics processor');
-      console.log('    input objects:');
-      console.dir(objects);
-      
-      // Diagnose before physics
-      diagnoseVectors('BEFORE_PHYSICS', objects);
+
       
       const newObjects = objects.map(doPhysics);
       
-      // Diagnose after physics
-      diagnoseVectors('AFTER_PHYSICS', newObjects);
-      
-      console.log('    output objects:');
-      console.dir(newObjects);
+
       return newObjects;
     },
     
-    // CRITICAL DIAGNOSTIC: Check vectors right before organism processor
-    (objects: SimulationObject[]) => {
-      console.log('  diagnostic processor');
-      
-      // Deep check for vector corruption
-      diagnoseVectors('BEFORE_ORGANISM_PROCESSOR', objects);
-      
-      // Save a reference snapshot to detect mutations
-      const snapshot = objects.map((obj) => ({
-        id: obj.id,
-        vectorX: obj.vector.x,
-        vectorY: obj.vector.y,
-      }));
-      
-      // Store snapshot in global space for post-processor comparison
-      // Using any here is acceptable for test-only diagnostic code
-      (global as any).vectorSnapshot = snapshot;
-      
-      return objects;
-    },
+
     
     // Apply behavior processors
     organismProcessor,
     
-    // Final diagnostic check after organism processor
-    (objects: SimulationObject[]) => {
-      console.log('  post-organism diagnostic');
-      
-      // Check vectors after organism processing
-      diagnoseVectors('AFTER_ORGANISM_PROCESSOR', objects);
-      
-      // Compare with pre-processor snapshot to detect mutations
-      // Using any here is acceptable for test-only diagnostic code
-      const snapshot = (global as any).vectorSnapshot;
-      if (snapshot) {
-        snapshot.forEach((saved: {id: string, vectorX: number, vectorY: number}) => {
-          const currentObj = objects.find((o) => o.id === saved.id);
-          if (currentObj) {
-            if (saved.vectorX !== currentObj.vector.x || saved.vectorY !== currentObj.vector.y) {
-              console.error(`===> VECTOR CHANGED during organism processing for ${saved.id}:`);
-              console.error(`    Before: (${saved.vectorX}, ${saved.vectorY}) -> After: (${currentObj.vector.x}, ${currentObj.vector.y})`);
-            }
-          }
-        });
-      }
-      
-      return objects;
-    },
+
   ];
   
   // CRITICAL: Create complete deep copies of the input objects before processing begins
@@ -334,8 +260,7 @@ export function calculateNextStep(currentStep: SimulationStep): { step: Simulati
       (obj.vector && obj.vector.magnitude() < MIN_VECTOR_MAGNITUDE);
       
     if (needsFix) {
-      console.error(`!!! FIXING VECTOR for object ${obj.id} !!!`);
-      console.error(`Original vector: ${obj.vector ? `(${obj.vector.x}, ${obj.vector.y})` : 'undefined'}`);
+
       
       // Clone the object to avoid modifying the original
       const safeObj = {
@@ -353,7 +278,7 @@ export function calculateNextStep(currentStep: SimulationStep): { step: Simulati
           new Victor(0, 0),
       };
       
-      console.error(`Fixed vector: (${safeObj.vector.x}, ${safeObj.vector.y})`);
+
       return safeObj;
     }
     

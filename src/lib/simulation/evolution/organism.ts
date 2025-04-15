@@ -2,7 +2,7 @@
 // Allele might be more accurate?
 // Genes might be more accurate? Let's just think of this as a genotype
 
-import { SimulationObject, ObjectTypeEnum, ObjectTypes } from "@/context/SimulationContext";
+import { SimulationObject, ObjectTypeEnum } from '@/context/SimulationContext';
 
 export type Genotype = number[];
 
@@ -28,7 +28,7 @@ export interface DNA extends AffinityMap, EatingMap {
 
 export const isDNA = (obj: any): obj is DNA => {
   return obj !== null && typeof obj === 'object' && 'visualSearch' in obj && 'stayEarningMultiplier' in obj && 'eatEarningMultiplier' in obj && 'energyGiftToOffspring' in obj && 'reproductionProbability' in obj && 'minimumEnergyToReproduce' in obj;
-}
+};
 
 export const expressGene = (source: DNA | SimulationObject, gene: keyof DNA): number => {
   const sampleDNA: DNA = isDNA(source) ? source : (source as SimulationObject).dna!;
@@ -52,7 +52,7 @@ const basePhenotypeRanges: Partial<Record<keyof DNA, PhenotypeRange>> = {
   eatEarningMultiplier: { min: 0, max: 10, default: 1 },
   energyGiftToOffspring: { min: 0, max: 1, default: 0.5 },
   reproductionProbability: { min: 0.00001, max: 0.1, default: 0.033 },
-  minimumEnergyToReproduce: { min: 0, max: 1000, default: 25 }
+  minimumEnergyToReproduce: { min: 0, max: 1000, default: 25 },
 };
 
 // Function to create a complete PhenotypeRanges object with dynamic properties
@@ -106,7 +106,7 @@ export const PLANT_DNA_TEMPLATE: DNA = {
   energyGiftToOffspring: [0.5],
   reproductionProbability: [0.033],
   minimumEnergyToReproduce: [25],
-  lineageName: 'Plant'
+  lineageName: 'Plant',
 };
 
 export const HERBIVORE_DNA_TEMPLATE: DNA = {
@@ -120,7 +120,7 @@ export const HERBIVORE_DNA_TEMPLATE: DNA = {
   energyGiftToOffspring: [0.5],
   reproductionProbability: [0.011],
   minimumEnergyToReproduce: [200],
-  lineageName: 'Herbivore'
+  lineageName: 'Herbivore',
 };
 
 /**
@@ -150,7 +150,7 @@ export const mutateDNA = (dna: DNA, mutationRate: number, mutationMagnitude: num
   const newDNA: DNA = JSON.parse(JSON.stringify(dna));
   
   // Iterate through each trait in the DNA object
-  (Object.keys(newDNA) as Array<keyof DNA>).filter((trait) => trait !== 'lineageName').forEach(trait => {
+  (Object.keys(newDNA) as Array<keyof DNA>).filter((trait) => trait !== 'lineageName').forEach((trait) => {
     const genotypes = newDNA[trait];
     const randomIndex = Math.floor(Math.random() * genotypes.length);
     if (Math.random() < mutationRate) {
