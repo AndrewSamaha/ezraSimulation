@@ -7,6 +7,7 @@ import { createNewNutrience } from '@/lib/simulation/behavior/nutrience';
 import { DNA, HERBIVORE_DNA_TEMPLATE, PLANT_DNA_TEMPLATE } from '@/lib/simulation/evolution/organism';
 import { createNewOrganism } from '@/lib/simulation/behavior/organism';
 import { ActionType } from '@/lib/simulation/behavior/actions';
+import { v4 as uuid } from 'uuid';
 
 // Create an enum from the ObjectTypes
 export enum ObjectTypeEnum {
@@ -62,6 +63,7 @@ export interface PerformanceMetrics {
 
 // Define the overall simulation state
 export interface SimulationState {
+  id: string;
   currentStep: number;
   steps: SimulationStep[];
   isRunning: boolean;
@@ -88,6 +90,7 @@ type SimulationAction =
 
 // Empty initial state for server-side rendering
 const emptyInitialState: SimulationState = {
+  id: uuid(),
   currentStep: 0,
   steps: [{ objects: [] }],
   isRunning: false,
@@ -106,13 +109,14 @@ const emptyInitialState: SimulationState = {
 
 // Function to create the actual initial state (only called on client-side)
 const createInitialState = (): SimulationState => ({
+  id: uuid(),
   currentStep: 0,
   steps: [
     {
       objects: [
         ...Array.from({ length: 5 }, () => createNewNutrience()),
         createNewOrganism(PLANT_DNA_TEMPLATE),
-        createNewOrganism(HERBIVORE_DNA_TEMPLATE),
+        ...Array.from({ length: 3 }, () => createNewOrganism(HERBIVORE_DNA_TEMPLATE)),
       ],
     },
   ],
@@ -207,7 +211,7 @@ function simulationReducer(state: SimulationState, action: SimulationAction): Si
           updatedSelectedObjectId = selectedInNewStep.id;
         }
       }
-        
+      
       return {
         ...state,
         steps: [...state.steps, newStep],

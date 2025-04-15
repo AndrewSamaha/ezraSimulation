@@ -7,10 +7,18 @@ interface DrawerProps {
   isOpen: boolean;
   onClose: () => void;
   selectedObject: SimulationObject | null;
+  allObjects: SimulationObject[];
+  dispatch: React.Dispatch<{ type: 'SELECT_OBJECT'; payload: string | null }>;
 }
 
-export function Drawer({ isOpen, onClose, selectedObject }: DrawerProps) {
+export function Drawer({ isOpen, onClose, selectedObject, allObjects, dispatch }: DrawerProps) {
   if (!isOpen || !selectedObject) return null;
+  
+  // Handle object selection from dropdown
+  const handleObjectSelect = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const objectId = event.target.value;
+    dispatch({ type: 'SELECT_OBJECT', payload: objectId });
+  };
   
   // Convert vector to readable format
   const formatVector = (vector: any) => {
@@ -24,17 +32,31 @@ export function Drawer({ isOpen, onClose, selectedObject }: DrawerProps) {
     <>
       {/* Drawer panel only - no backdrop that blocks controls */}
       <div 
-        className={`fixed right-0 top-0 h-full bg-gray-900 text-white shadow-lg w-96 transform transition-transform duration-300 ease-in-out overflow-auto`}
+        className={'fixed right-0 top-0 h-full bg-gray-900 text-white shadow-lg w-96 transform transition-transform duration-300 ease-in-out overflow-auto'}
         style={{ 
           transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
-          zIndex: 40  // High z-index but not higher than controls
+          zIndex: 40,  // High z-index but not higher than controls
         }}
       >
         {/* Header */}
         <div className="p-4 border-b border-gray-700 flex justify-between items-center">
-          <h2 className="text-xl font-semibold">
+          <select 
+            id="object-select" 
+            value={selectedObject.id}
+            onChange={handleObjectSelect}
+            className="w-full bg-gray-800 border border-gray-700 rounded p-2 text-white"
+          >
+            {allObjects.map((obj) => (
+              <option key={obj.id} value={obj.id}>
+                {obj.objectType.charAt(0).toUpperCase() + obj.objectType.slice(1)}{' '}
+                {obj.id.substring(0, 8)}...{' '}
+                {obj.dna ? `(${obj.dna.lineageName || 'Unknown'})` : ''}
+              </option>
+            ))}
+          </select>
+          {/* <h2 className="text-xl font-semibold">
             {selectedObject.objectType.charAt(0).toUpperCase() + selectedObject.objectType.slice(1)} Details
-          </h2>
+          </h2> */}
           <button 
             onClick={onClose} 
             className="rounded-full p-1 hover:bg-gray-700 transition"
@@ -49,7 +71,7 @@ export function Drawer({ isOpen, onClose, selectedObject }: DrawerProps) {
         <div className="p-4">
           <div className="space-y-4">
             {/* Object preview */}
-            <div className="flex justify-center mb-6">
+            {/* <div className="flex justify-center mb-6">
               <div 
                 className="rounded-full" 
                 style={{ 
@@ -57,12 +79,12 @@ export function Drawer({ isOpen, onClose, selectedObject }: DrawerProps) {
                   width: `${selectedObject.size || 20}px`, 
                   height: `${selectedObject.size || 20}px`,
                   border: '2px solid white',
-                  boxShadow: '0 0 15px rgba(255,255,255,0.5)'
+                  boxShadow: '0 0 15px rgba(255,255,255,0.5)',
                 }}
               />
-            </div>
+            </div> */}
             
-            <div className="border-b border-gray-700 mb-4"></div>
+            {/* <div className="border-b border-gray-700 mb-4"></div> */}
             <div className="grid grid-cols-[1fr_2fr] gap-2">
               <div className="font-semibold">ID:</div>
               <div className="truncate font-mono text-xs">{selectedObject.id}</div>
@@ -86,6 +108,9 @@ export function Drawer({ isOpen, onClose, selectedObject }: DrawerProps) {
               
               <div className="font-semibold">Age:</div>
               <div>{selectedObject.age}</div>
+
+              <div className="font-semibold">Energy:</div>
+              <div>{Math.round(selectedObject.energy)}</div>
               
               <div className="font-semibold">Position:</div>
               <div>{formatVector(selectedObject.vector)}</div>

@@ -252,9 +252,10 @@ export default function SimulationPage() {
           : 'Use the controls to start, pause, or reset the simulation'}
       </div>
       
-        <div className="fixed top-5 right-5 text-white text-sm bg-black/70 p-2 px-4 rounded"
+        <div className="fixed top-5 right-5 text-white text-sm bg-black/70 p-2 px-4 rounded space-y-2"
              style={{ transform: selectedObject ? 'translateX(-220px)' : 'translateX(0)', transition: 'transform 300ms ease-in-out' }}>
-          Step: {state.currentStep} / {state.steps.length - 1}
+          <div>Step: {state.currentStep} / {state.steps.length - 1}</div>
+          <div>Objects: {state.steps[state.currentStep].objects.length}</div>
         </div>
         
         {/* Performance Panel */}
@@ -269,6 +270,8 @@ export default function SimulationPage() {
         isOpen={!!selectedObject} 
         onClose={handleCloseDrawer} 
         selectedObject={selectedObject}
+        allObjects={state.steps[state.currentStep].objects}
+        dispatch={dispatch}
       />
       
       {/* Invisible overlay that prevents background clicks from closing drawer when using controls */}
