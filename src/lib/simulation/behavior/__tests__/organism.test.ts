@@ -1,7 +1,7 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import Victor from 'victor';
-import { findNearestNutrient, findNearestObject, getRandomObjectSample } from '../organism';
-import { SimulationObject, ObjectTypeEnum } from '@/context/SimulationContext';
+import { findNearestNutrient, findNearestObject } from '../organism';
+import { ObjectTypeEnum, SimulationObject } from '@/lib/simulation/types/SimulationObject';
 
 // Helper function to create test objects
 const createTestObject = (

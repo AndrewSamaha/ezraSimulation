@@ -1,4 +1,9 @@
-import { SimulationObject, SimulationStep, ObjectTypeEnum } from '@/context/SimulationContext';
+import {
+  SimulationObject,
+  SimulationStep,
+  ObjectTypeEnum,
+} from '@/lib/simulation/types/SimulationObject';
+
 import Victor from 'victor';
 
 import { doPhysics } from './physics';
@@ -11,23 +16,7 @@ import { doOrganismThings } from './behavior/organism';
  */
 export type SimulationProcessor = (objects: SimulationObject[]) => SimulationObject[];
 
-/**
- * List of processors to run in sequence
- * Each processor can transform the entire array of objects
- */
-const simulationProcessors: SimulationProcessor[] = [
-  // Apply physics to all objects
-  (objects) => objects.map(doPhysics),
-  
-  // Apply nutrience-specific behaviors
-  (objects) => objects.reduce<SimulationObject[]>((acc, obj) => {
-    // Process the object and possibly create new objects
-    const result = doNutrienceThings(obj, objects);
-    return [...acc, ...result];
-  }, []),
-  
-  // Add more processors here as needed
-];
+
 
 /**
  * Calculates the next step in the simulation by running all processors in sequence
@@ -122,7 +111,7 @@ export function calculateNextStep(currentStep: SimulationStep): { step: Simulati
                   ...resultObj,
                   vector: new Victor(
                     parent.vector.x + (Math.random() * 100 - 50),
-                    parent.vector.y + (Math.random() * 100 - 50)
+                    parent.vector.y + (Math.random() * 100 - 50),
                   ),
                   velocity: new Victor(0, 0),
                   forceInput: new Victor(0, 0),
@@ -135,7 +124,7 @@ export function calculateNextStep(currentStep: SimulationStep): { step: Simulati
               ...resultObj,
               vector: new Victor(
                 Math.random() * 800 + 100, // Avoid edges
-                Math.random() * 800 + 100
+                Math.random() * 800 + 100,
               ),
               velocity: new Victor(0, 0),
               forceInput: new Victor(0, 0),
@@ -268,7 +257,7 @@ export function calculateNextStep(currentStep: SimulationStep): { step: Simulati
         // Create safe vector values
         vector: new Victor(
           ensureSafeValue(obj.vector?.x),
-          ensureSafeValue(obj.vector?.y)
+          ensureSafeValue(obj.vector?.y),
         ),
         velocity: obj.velocity ? 
           new Victor(ensureSafeValue(obj.velocity.x / 10), ensureSafeValue(obj.velocity.y / 10)) : 

@@ -2,8 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Meta } from '@storybook/react';
 import Victor from 'victor';
 import { ForceVector } from '../../../components/ForceVector';
-import { calcForceWithAffinity, calcForce } from './organism';
-import { ObjectTypeEnum } from '../../../context/SimulationContext';
+import { calcForceWithAffinity } from './organism';
+import { ObjectTypeEnum } from '@/lib/simulation/types/SimulationObject';
 import { 
   PLANT_DNA_TEMPLATE, 
   HERBIVORE_DNA_TEMPLATE, 

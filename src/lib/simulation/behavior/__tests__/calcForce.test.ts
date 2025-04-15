@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import Victor from 'victor';
 import { calcForce, calcForceWithAffinity } from '../organism';
-import { SimulationObject, ObjectTypeEnum } from '@/context/SimulationContext';
+import { ObjectTypeEnum, SimulationObject } from '@/lib/simulation/types/SimulationObject';
 import { HERBIVORE_DNA_TEMPLATE } from '@/lib/simulation/evolution/organism';
 
 // Helper function to create test objects

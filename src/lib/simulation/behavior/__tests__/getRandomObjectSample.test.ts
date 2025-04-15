@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import Victor from 'victor';
 import { getRandomObjectSample } from '../organism';
-import { SimulationObject, ObjectTypeEnum } from '@/context/SimulationContext';
+import { ObjectTypeEnum, SimulationObject } from '@/lib/simulation/types/SimulationObject';
 
 // Helper function to create test objects
 const createTestObject = (

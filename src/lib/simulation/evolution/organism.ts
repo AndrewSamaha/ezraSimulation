@@ -2,7 +2,7 @@
 // Allele might be more accurate?
 // Genes might be more accurate? Let's just think of this as a genotype
 
-import { SimulationObject, ObjectTypeEnum } from '@/context/SimulationContext';
+import { ObjectTypeEnum, SimulationObject } from '@/lib/simulation/types/SimulationObject';
 
 export type Genotype = number[];
 

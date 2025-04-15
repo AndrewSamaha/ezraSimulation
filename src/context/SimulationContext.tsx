@@ -1,65 +1,19 @@
 'use client';
 
 import React, { createContext, useContext, useReducer, ReactNode, useEffect, useState } from 'react';
-import Victor from 'victor';
+
 import { calculateNextStep } from '@/lib/simulation/main';
 import { createNewNutrience } from '@/lib/simulation/behavior/nutrience';
-import { DNA, HERBIVORE_DNA_TEMPLATE, PLANT_DNA_TEMPLATE } from '@/lib/simulation/evolution/organism';
+import { HERBIVORE_DNA_TEMPLATE, PLANT_DNA_TEMPLATE } from '@/lib/simulation/evolution/organism';
 import { createNewOrganism } from '@/lib/simulation/behavior/organism';
-import { ActionType } from '@/lib/simulation/behavior/actions';
+
 import { v4 as uuid } from 'uuid';
 
-// Create an enum from the ObjectTypes
-export enum ObjectTypeEnum {
-  ORGANISM = 'organism',
-  NUTRIENCE = 'nutrience'
-}
-
-// Define object types as an array of strings
-export const ObjectTypes = [ObjectTypeEnum.ORGANISM, ObjectTypeEnum.NUTRIENCE] as const;
-
-// Create a TypeScript type from the ObjectTypes array
-type ObjectType = typeof ObjectTypes[number];
-
-// Define the shape of a simulation object
-export interface SimulationObject {
-  id: string;
-  objectType: ObjectType;  // Required field for object type
-  color?: string;
-  size?: number;
-  age: number;
-  vector: Victor;    // Position vector
-  velocity: Victor;  // Velocity vector (heading and speed)
-  forceInput: Victor; // Force vector (for external forces)
-  parentId: string | null;
-  energy: number;
-  actionHistory: ActionType[];
-  dna?: DNA;
-  // objectsInMemory: SimulationObject[]; // this might help reduce computational time by
-  // just remembering previously seen objects and their locations
-}
-
-// Define the shape of a simulation state at a specific step
-export interface SimulationStep {
-  objects: SimulationObject[];
-}
-
-// Define performance metrics interface
-export interface PerformanceMetrics {
-  // Frame metrics
-  lastFrameDuration: number;
-  frameDurations: number[];  // Last 30 frames
-  fps: number;
-  
-  // Organism calculation metrics
-  totalOrganismCalculationTime: number;
-  organismCalculationTimes: number[];  // Last 30 frames
-  avgOrganismCalculationTime: number;
-  
-  // Other specific metrics
-  detailedMetrics?: {[key: string]: number[]};
-  lastUpdateTimestamp: number;
-}
+import {
+  SimulationObject,
+  SimulationStep,
+  PerformanceMetrics,
+} from '@/lib/simulation/types/SimulationObject';
 
 // Define the overall simulation state
 export interface SimulationState {

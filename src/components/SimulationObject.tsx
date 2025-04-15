@@ -1,17 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { 
-  SimulationObject as SimObj, 
-  ObjectTypeEnum, 
-  useSimulation 
-} from '@/context/SimulationContext';
+import { useSimulation } from '@/context/SimulationContext';
+import { ObjectTypeEnum, type SimulationObject } from '@/lib/simulation/types/SimulationObject';
 import { Organism } from './Organism';
 import { Nutrience } from './Nutrience';
 import { ForceVector } from './ForceVector';
 
 interface SimulationObjectProps {
-  object: SimObj;
+  object: SimulationObject;
   showForceVector?: boolean;
 }
 

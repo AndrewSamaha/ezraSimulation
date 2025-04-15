@@ -1,5 +1,5 @@
 import Victor from 'victor';
-import { ObjectTypeEnum } from '@/context/SimulationContext';
+import { ObjectTypeEnum } from '@/lib/simulation/types/SimulationObject';
 import { HERBIVORE_DNA_TEMPLATE, PLANT_DNA_TEMPLATE } from '@/lib/simulation/evolution/organism';
 
 // Create mock objects for our stories

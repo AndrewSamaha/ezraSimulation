@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Meta, StoryObj } from '@storybook/react';
 import { Organism } from './Organism';
 import Victor from 'victor';
-import { ObjectTypeEnum } from '@/context/SimulationContext';
+import { ObjectTypeEnum } from '@/lib/simulation/types/SimulationObject';
 
 // Mock SimObj type (adjust import if needed)
 type SimObj = {

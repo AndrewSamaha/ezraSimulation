@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { SimulationObject, ObjectTypeEnum } from '@/context/SimulationContext';
+import { ObjectTypeEnum, SimulationObject } from '@/lib/simulation/types/SimulationObject';
 import { doPhysics } from '@/lib/simulation/physics';
 import { doOrganismThings } from '@/lib/simulation/behavior/organism';
 import { HERBIVORE_DNA_TEMPLATE } from '@/lib/simulation/evolution/organism';

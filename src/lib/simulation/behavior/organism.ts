@@ -1,8 +1,7 @@
 import Victor from 'victor';
 import { v4 as uuid } from 'uuid';
 
-import { SimulationObject } from '@/context/SimulationContext';
-import { ObjectTypeEnum } from '@/context/SimulationContext';
+import { SimulationObject, ObjectTypeEnum } from '@/lib/simulation/types/SimulationObject';
 import { CONTAINER_WIDTH, CONTAINER_HEIGHT } from '@/lib/constants/world';
 import { DNA, mutateDNA, isDNA } from '@/lib/simulation/evolution/organism';
 import { expressGene } from '@/lib/simulation/evolution/organism';

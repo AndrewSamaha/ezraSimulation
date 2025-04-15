@@ -1,7 +1,7 @@
 import React from 'react';
 import { Meta, StoryObj } from '@storybook/react';
 import { SimulationObject } from './SimulationObject';
-import { ObjectTypeEnum } from '@/context/SimulationContext';
+import { ObjectTypeEnum } from '@/lib/simulation/types/SimulationObject';
 import Victor from 'victor';
 import { SimulationProvider } from '@/context/SimulationContext';
 import { HERBIVORE_DNA_TEMPLATE, PLANT_DNA_TEMPLATE } from '@/lib/simulation/evolution/organism';
