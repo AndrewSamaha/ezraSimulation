@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { SimulationObject, SimulationStep, ObjectTypeEnum } from '@/context/SimulationContext';
+import { SimulationObject, SimulationStep } from '@/context/SimulationContext';
 import { calculateNextStep } from '@/lib/simulation/main';
 import { createNewOrganism } from '@/lib/simulation/behavior/organism';
 import { HERBIVORE_DNA_TEMPLATE } from '@/lib/simulation/evolution/organism';

@@ -114,9 +114,9 @@ const createInitialState = (): SimulationState => ({
   steps: [
     {
       objects: [
-        //...Array.from({ length: 5 }, () => createNewNutrience()),
+        ...Array.from({ length: 5 }, () => createNewNutrience()),
         createNewOrganism(PLANT_DNA_TEMPLATE),
-        //createNewOrganism(HERBIVORE_DNA_TEMPLATE),
+        ...Array.from({ length: 3 }, () => createNewOrganism(HERBIVORE_DNA_TEMPLATE)),
       ],
     },
   ],
