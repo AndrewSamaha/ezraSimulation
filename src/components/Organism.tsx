@@ -26,8 +26,8 @@ export function Organism({ object: obj }: OrganismProps) {
   const offsetY = Math.sin(obj.velocity.angle()) * normalizedMagnitude * (mainSize / 2);
   
   // Position relative to center of main circle
-  const indicatorLeft = mainSize / 2 + offsetX - (indicatorSize / 2);
-  const indicatorTop = mainSize / 2 + offsetY - (indicatorSize / 2);
+  const indicatorLeft = mainSize / 2 + offsetX - (indicatorSize / 1.75);
+  const indicatorTop = mainSize / 2 + offsetY - (indicatorSize / 1.75);
   
   return (
     <div 
