@@ -160,8 +160,6 @@ function simulationReducer(state: SimulationState, action: SimulationAction): Si
   }
 
   case 'NEXT_STEP': {
-    console.log('NEXT_STEP', state.currentStep, state.id);
-    console.log('  num organisms:', state.steps[state.currentStep].objects.filter((o) => o.objectType === ObjectTypeEnum.ORGANISM).length);
     // If we're at the last known step, we need to calculate the next step
     if (state.currentStep >= state.steps.length - 1) {
       // Calculate new positions based on vector movement and collisions using our extracted physics
@@ -213,9 +211,7 @@ function simulationReducer(state: SimulationState, action: SimulationAction): Si
           updatedSelectedObjectId = selectedInNewStep.id;
         }
       }
-      console.log('  num organisms at end:', state.steps[state.currentStep].objects.filter((o) => o.objectType === ObjectTypeEnum.ORGANISM).length);
-      console.log('  newStep:')
-      console.dir(newStep)
+      
       return {
         ...state,
         steps: [...state.steps, newStep],
@@ -233,7 +229,6 @@ function simulationReducer(state: SimulationState, action: SimulationAction): Si
         },
       };
     } else {
-      console.log('  in precalculated step')
       // Just move to the next pre-calculated step, maintaining the selected object
       // Check if we need to update the selected object's ID in the next step
       let updatedSelectedObjectId = state.selectedObjectId;

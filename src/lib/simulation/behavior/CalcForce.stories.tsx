@@ -117,7 +117,6 @@ export const CalcForceSandbox = () => {
     affinityValue, 
     forceMultiplier,
   );
-  console.log('forceVector', forceVector);
   // These are the values used in the calcForce function
   
   // Handle mouse movement to update target position

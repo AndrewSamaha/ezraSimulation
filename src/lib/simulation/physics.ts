@@ -7,10 +7,6 @@ import Victor from 'victor';
  * Calculates the next position and velocity for a simulation object based on physics
  */
 export function doPhysics(obj: SimulationObject): SimulationObject {
-  console.log('doPhysics for object:', obj.id);
-  console.log('  starting position:', obj.vector);
-  // console.log('  starting velocity:', obj.velocity);
-  // console.log('  starting forceInput:', obj.forceInput);
   // Clone the current position and velocity vectors to work with
   let position = obj.vector.clone();
   let velocity = obj.velocity.clone();
@@ -89,12 +85,6 @@ export function doPhysics(obj: SimulationObject): SimulationObject {
     actionHistory: [...obj.actionHistory], // Create a new array to avoid reference issues
     dna: obj.dna, // DNA references are probably fine as they're not mutated
   };
-  
-  console.log('  updated object:', updatedObject);
-  console.log('  updatedOpject.vector:', updatedObject.vector);
-  console.log('  position:', position);
-  console.log('  position.clone():', position.clone());
-  console.log('  updated object2:', updatedObject);
   
   return updatedObject;
 }
