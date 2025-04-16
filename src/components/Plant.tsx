@@ -1,19 +1,19 @@
 'use client';
 
-import { SimulationObject as SimObj } from '@/context/SimulationContext';
+import { SimulationObject } from '@/lib/simulation/types/SimulationObject';
 
 interface PlantProps {
-  object: SimObj;
+  object: SimulationObject;
   isHovered: boolean;
 }
 
 export function Plant({ object: obj }: PlantProps) {
   return (
-    <div 
+    <div
       className="rounded-full transform -translate-x-1/2 -translate-y-1/2 
         transition-all duration-200 ease-out cursor-pointer 
         bg-green-500 border-2 border-green-500 shadow-plant"
-      style={{ 
+      style={{
         width: `${obj.size || 50}px`,
         height: `${obj.size || 50}px`,
         opacity: 0.6, // Direct CSS opacity for transparency

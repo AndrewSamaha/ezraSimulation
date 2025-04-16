@@ -12,8 +12,10 @@ export const PerformancePanel: React.FC<PerformancePanelProps> = ({ className })
 
   return (
     <Card className={`bg-black/80 rounded p-3 text-white text-xs overflow-hidden ${className}`}>
-      <h3 className="text-sm font-semibold mb-2 border-b border-white/20 pb-1">Performance Metrics</h3>
-      
+      <h3 className="text-sm font-semibold mb-2 border-b border-white/20 pb-1">
+        Performance Metrics
+      </h3>
+
       <div className="space-y-1">
         <div className="flex justify-between">
           <span>Frame Rate:</span>
@@ -21,23 +23,23 @@ export const PerformancePanel: React.FC<PerformancePanelProps> = ({ className })
             {performanceMetrics.fps.toFixed(1)} FPS
           </span>
         </div>
-        
+
         <div className="flex justify-between">
           <span>Last Frame:</span>
           <span>{performanceMetrics.lastFrameDuration.toFixed(2)} ms</span>
         </div>
-        
+
         <div className="flex justify-between">
           <span>Avg Organism Calc:</span>
           <span>{performanceMetrics.avgOrganismCalculationTime.toFixed(2)} ms</span>
         </div>
-        
+
         <div className="flex justify-between">
           <span>Total Organism Time:</span>
           <span>{performanceMetrics.totalOrganismCalculationTime.toFixed(2)} ms</span>
         </div>
       </div>
-      
+
       {/* Frame duration history visualization */}
       {performanceMetrics.frameDurations.length > 0 && (
         <div className="mt-3">
@@ -45,14 +47,14 @@ export const PerformancePanel: React.FC<PerformancePanelProps> = ({ className })
           <div className="h-12 flex items-end">
             {performanceMetrics.frameDurations.slice(0, 20).map((duration, index) => {
               // Cap at 100ms for visualization purposes
-              const height = Math.min(duration / 100 * 100, 100);
+              const height = Math.min((duration / 100) * 100, 100);
               return (
-                <div 
+                <div
                   key={index}
                   className="w-1 mr-[1px] bg-blue-400"
-                  style={{ 
+                  style={{
                     height: `${height}%`,
-                    backgroundColor: duration > 20 ? '#ef4444' : '#60a5fa'
+                    backgroundColor: duration > 20 ? '#ef4444' : '#60a5fa',
                   }}
                 />
               );

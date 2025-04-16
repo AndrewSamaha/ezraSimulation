@@ -19,12 +19,17 @@ export const createNewNutrience = (parent?: SimulationObject): SimulationObject 
       forceInput: new Victor(0, 0),
       parentId: null,
       energy: 100,
-      actionHistory: []
+      actionHistory: [],
     };
   }
 
-  const newPosition = parent.vector.clone().add(new Victor(Math.random() * 20 - 10, Math.random() * 20 - 10));
-  const forceAwayFromParent = new Victor(newPosition.x - parent.vector.x, newPosition.y - parent.vector.y).multiply(new Victor(.2, .2));
+  const newPosition = parent.vector
+    .clone()
+    .add(new Victor(Math.random() * 20 - 10, Math.random() * 20 - 10));
+  const forceAwayFromParent = new Victor(
+    newPosition.x - parent.vector.x,
+    newPosition.y - parent.vector.y,
+  ).multiply(new Victor(0.2, 0.2));
 
   return {
     id: uuid(),
@@ -37,21 +42,21 @@ export const createNewNutrience = (parent?: SimulationObject): SimulationObject 
     forceInput: forceAwayFromParent,
     parentId: parent.id,
     energy: 100,
-    actionHistory: []
+    actionHistory: [],
   };
 };
 
 /**
- * Apply nutrience-specific behaviors and return an array that can contain the original object
+ * Apply nutrience-specific behavior and return an array that can contain the original object
  * plus any new objects created (e.g., reproduction, spawning resources, etc.)
- * 
+ *
  * @param obj The nutrience object to process
  * @param allObjects All objects in the current simulation step (for contextual behaviors)
  * @returns Array of objects including the processed object and any new objects
  */
 export function doNutrienceThings(
-  obj: SimulationObject, 
-  allObjects: SimulationObject[]
+  obj: SimulationObject,
+  allObjects: SimulationObject[],
 ): SimulationObject[] {
   // Skip non-nutrience objects
   if (obj.objectType !== ObjectTypeEnum.NUTRIENCE) {
@@ -61,7 +66,9 @@ export function doNutrienceThings(
   const returnArray = [];
 
   const shouldReproduce = () => {
-    const nutrienceCount = allObjects.filter(o => o.objectType === ObjectTypeEnum.NUTRIENCE).length;
+    const nutrienceCount = allObjects.filter(
+      (o) => o.objectType === ObjectTypeEnum.NUTRIENCE,
+    ).length;
     if (nutrienceCount >= MAX_NUTRIENCE) {
       return false;
     }
@@ -72,7 +79,7 @@ export function doNutrienceThings(
       return false;
     }
     return true;
-  }
+  };
 
   const shouldSurvive = () => {
     if (obj.age <= 200) {
@@ -83,7 +90,7 @@ export function doNutrienceThings(
     }
 
     return false;
-  }
+  };
 
   if (shouldReproduce()) {
     returnArray.push(createNewNutrience(obj));

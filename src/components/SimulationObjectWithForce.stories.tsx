@@ -3,27 +3,15 @@ import { Meta, StoryObj } from '@storybook/react';
 import { SimulationObject } from './SimulationObject';
 import { ObjectTypeEnum } from '@/lib/simulation/types/SimulationObject';
 import Victor from 'victor';
+import { type SimulationObject as SimulationObjectType } from '@/lib/simulation/types/SimulationObject';
 import { SimulationProvider } from '@/context/SimulationContext';
 import { HERBIVORE_DNA_TEMPLATE, PLANT_DNA_TEMPLATE } from '@/lib/simulation/evolution/organism';
 
-// Define types for our mock objects
-type SimulationObjectType = {
-  id: string;
-  objectType: ObjectTypeEnum;
-  age: number;
-  vector: Victor;
-  velocity: Victor;
-  forceInput: Victor;
-  parentId: string | null;
-  energy: number;
-  actionHistory: any[];
-  dna?: any;
-  color?: string;
-  size?: number;
-};
-
 // Helper function to create mock simulation objects
-const createMockObject = (type = ObjectTypeEnum.ORGANISM, overrides: Partial<SimulationObjectType> = {}): SimulationObjectType => {
+const createMockObject = (
+  type = ObjectTypeEnum.ORGANISM,
+  overrides: Partial<SimulationObjectType> = {},
+): SimulationObjectType => {
   const baseObject: SimulationObjectType = {
     id: `mock-${type}-${Math.random().toString(36).substring(2, 9)}`,
     objectType: type,
@@ -34,7 +22,7 @@ const createMockObject = (type = ObjectTypeEnum.ORGANISM, overrides: Partial<Sim
     parentId: null,
     energy: Math.floor(Math.random() * 100) + 20,
     actionHistory: [],
-    ...overrides
+    ...overrides,
   };
 
   // Add type-specific properties
@@ -66,11 +54,11 @@ const SimulationObjectWithForceControl = () => {
   const [forceMagnitude, setForceMagnitude] = useState(5);
   const [forceAngle, setForceAngle] = useState(45);
   const [size, setSize] = useState(20);
-  
+
   // Calculate force vector from magnitude and angle
-  const forceX = forceMagnitude * Math.cos(forceAngle * Math.PI / 180);
-  const forceY = forceMagnitude * Math.sin(forceAngle * Math.PI / 180);
-  
+  const forceX = forceMagnitude * Math.cos((forceAngle * Math.PI) / 180);
+  const forceY = forceMagnitude * Math.sin((forceAngle * Math.PI) / 180);
+
   // Create the simulation object with the force vector
   const simulationObject = createMockObject(objectType, {
     forceInput: new Victor(forceX, forceY),
@@ -78,23 +66,25 @@ const SimulationObjectWithForceControl = () => {
     // Place in the middle
     vector: new Victor(250, 250),
   });
-  
+
   return (
     <div>
-      <div style={{ 
-        marginBottom: '20px', 
-        display: 'flex', 
-        flexDirection: 'column', 
-        gap: '10px',
-        width: '500px',
-      }}>
+      <div
+        style={{
+          marginBottom: '20px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px',
+          width: '500px',
+        }}
+      >
         <div>
           <label htmlFor="objectType" style={{ color: 'white', marginRight: '10px' }}>
             Object Type:
           </label>
-          <select 
+          <select
             id="objectType"
-            value={objectType} 
+            value={objectType}
             onChange={(e) => setObjectType(e.target.value as ObjectTypeEnum)}
             style={{ padding: '5px' }}
           >
@@ -102,65 +92,64 @@ const SimulationObjectWithForceControl = () => {
             <option value={ObjectTypeEnum.NUTRIENCE}>Nutrience</option>
           </select>
         </div>
-        
+
         <div>
           <label htmlFor="size" style={{ color: 'white', marginRight: '10px' }}>
             Size: {size}
           </label>
-          <input 
+          <input
             id="size"
-            type="range" 
-            min="5" 
-            max="50" 
+            type="range"
+            min="5"
+            max="50"
             step="1"
-            value={size} 
-            onChange={(e) => setSize(parseInt(e.target.value))} 
+            value={size}
+            onChange={(e) => setSize(parseInt(e.target.value))}
           />
         </div>
-        
+
         <div>
           <label htmlFor="forceMagnitude" style={{ color: 'white', marginRight: '10px' }}>
             Force Magnitude: {forceMagnitude}
           </label>
-          <input 
+          <input
             id="forceMagnitude"
-            type="range" 
-            min="0" 
-            max="10" 
+            type="range"
+            min="0"
+            max="10"
             step="0.1"
-            value={forceMagnitude} 
-            onChange={(e) => setForceMagnitude(parseFloat(e.target.value))} 
+            value={forceMagnitude}
+            onChange={(e) => setForceMagnitude(parseFloat(e.target.value))}
           />
         </div>
-        
+
         <div>
           <label htmlFor="forceAngle" style={{ color: 'white', marginRight: '10px' }}>
             Force Angle: {forceAngle}°
           </label>
-          <input 
+          <input
             id="forceAngle"
-            type="range" 
-            min="0" 
-            max="360" 
+            type="range"
+            min="0"
+            max="360"
             step="1"
-            value={forceAngle} 
-            onChange={(e) => setForceAngle(parseInt(e.target.value))} 
+            value={forceAngle}
+            onChange={(e) => setForceAngle(parseInt(e.target.value))}
           />
         </div>
       </div>
-      
-      <div style={{ 
-        width: '500px', 
-        height: '500px', 
-        position: 'relative', 
-        background: '#111', 
-        borderRadius: '8px' 
-      }}>
+
+      <div
+        style={{
+          width: '500px',
+          height: '500px',
+          position: 'relative',
+          background: '#111',
+          borderRadius: '8px',
+        }}
+      >
         <SimulationProvider>
-          <SimulationObject 
-            object={simulationObject} 
-            showForceVector={true}
-          />
+          <SimulationObject object={simulationObject} showForceVector={true} />
         </SimulationProvider>
       </div>
     </div>

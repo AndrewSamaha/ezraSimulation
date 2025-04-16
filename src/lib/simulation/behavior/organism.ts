@@ -13,13 +13,21 @@ const DEFAULT_ENERGY_GIFT = 30;
 const RANDOM_SAMPLE_SIZE = 5;
 const AFFINITY_FORCE_MULTIPLIER = 100;
 
-export const createNewOrganism = (sampleSource: DNA | SimulationObject, mutationRate: number = MUTATION_RATE): SimulationObject => {
-  const sampleDNA: DNA = isDNA(sampleSource) ? sampleSource : (sampleSource as SimulationObject).dna!;
-  const position = new Victor(Math.random() * CONTAINER_WIDTH, Math.random() * CONTAINER_HEIGHT); 
-  //isDNA(sampleSource) ? new Victor(Math.random() * CONTAINER_WIDTH, Math.random() * CONTAINER_HEIGHT) : (sampleSource as SimulationObject).vector.clone();
-  const forceInput = new Victor(Math.random() * 20 - 10, Math.random() * 20 - 10).multiply(new Victor(.2, .2));
+export const createNewOrganism = (
+  sampleSource: DNA | SimulationObject,
+  mutationRate: number = MUTATION_RATE,
+): SimulationObject => {
+  const sampleDNA: DNA = isDNA(sampleSource)
+    ? sampleSource
+    : (sampleSource as SimulationObject).dna!;
+  const position = new Victor(Math.random() * CONTAINER_WIDTH, Math.random() * CONTAINER_HEIGHT);
+  const forceInput = new Victor(Math.random() * 20 - 10, Math.random() * 20 - 10).multiply(
+    new Victor(0.2, 0.2),
+  );
   const dna = mutateDNA(sampleDNA, mutationRate);
-  const energy = isDNA(sampleSource) ? DEFAULT_ENERGY_GIFT : (sampleSource as SimulationObject).energy * expressGene(dna, 'energyGiftToOffspring');
+  const energy = isDNA(sampleSource)
+    ? DEFAULT_ENERGY_GIFT
+    : (sampleSource as SimulationObject).energy * expressGene(dna, 'energyGiftToOffspring');
   const id = uuid();
   // Create new organism with random position
   return {
@@ -30,7 +38,7 @@ export const createNewOrganism = (sampleSource: DNA | SimulationObject, mutation
     age: 0,
     vector: position,
     velocity: new Victor(0, 0),
-    forceInput: forceInput || new Victor(0,0),
+    forceInput: forceInput || new Victor(0, 0),
     parentId: isDNA(sampleSource) ? null : (sampleSource as SimulationObject).id,
     energy,
     actionHistory: [],
@@ -38,7 +46,11 @@ export const createNewOrganism = (sampleSource: DNA | SimulationObject, mutation
   };
 };
 
-export const findNearestObject = (cur: SimulationObject, allObjects: SimulationObject[], objectType: ObjectTypeEnum) => {
+export const findNearestObject = (
+  cur: SimulationObject,
+  allObjects: SimulationObject[],
+  objectType: ObjectTypeEnum,
+) => {
   const filteredObjects = allObjects.filter((o) => o.objectType === objectType);
   if (filteredObjects.length === 0) {
     return null;
@@ -71,7 +83,11 @@ const shouldReproduce = (obj: SimulationObject, allObjects: SimulationObject[]) 
   return Math.random() < expressGene(obj.dna!, 'reproductionProbability');
 };
 
-export const getRandomObjectSample = (cur: SimulationObject, allObjects: SimulationObject[], intendedSampleSize: number = RANDOM_SAMPLE_SIZE) => {
+export const getRandomObjectSample = (
+  cur: SimulationObject,
+  allObjects: SimulationObject[],
+  intendedSampleSize: number = RANDOM_SAMPLE_SIZE,
+) => {
   const sampleSize = intendedSampleSize + 1;
   if (sampleSize >= allObjects.length) return allObjects.filter((o) => o.id !== cur.id);
   const sample: SimulationObject[] = [];
@@ -84,11 +100,16 @@ export const getRandomObjectSample = (cur: SimulationObject, allObjects: Simulat
   return sample;
 };
 
-export const calcForceWithAffinity = (curVector: Victor, targetVector: Victor, affinityValue: number, forceMultiplier: number = AFFINITY_FORCE_MULTIPLIER) => {
+export const calcForceWithAffinity = (
+  curVector: Victor,
+  targetVector: Victor,
+  affinityValue: number,
+  forceMultiplier: number = AFFINITY_FORCE_MULTIPLIER,
+) => {
   const affinityDistance = curVector.distance(targetVector);
   const normalizedTargetPosition = targetVector.subtract(curVector).normalize();
   const distanceSquared = affinityDistance * affinityDistance;
-  const force = forceMultiplier * affinityValue / distanceSquared;
+  const force = (forceMultiplier * affinityValue) / distanceSquared;
   const forceVector = normalizedTargetPosition.multiply(new Victor(force, force));
   return forceVector;
 };
@@ -120,21 +141,20 @@ const shouldDie = (obj: SimulationObject) => {
 /**
  * Apply nutrience-specific behaviors and return an array that can contain the original object
  * plus any new objects created (e.g., reproduction, spawning resources, etc.)
- * 
+ *
  * @param obj The nutrience object to process
  * @param allObjects All objects in the current simulation step (for contextual behaviors)
  * @param metricsCollector Optional object to collect performance metrics
  * @returns Array of objects including the processed object and any new objects, and duration if metricsCollector provided
  */
 export function doOrganismThings(
-  obj: SimulationObject, 
+  obj: SimulationObject,
   allObjects: SimulationObject[],
   metricsCollector?: Record<string, number[]>,
-): SimulationObject[] | { objects: SimulationObject[], duration: number } {
+): SimulationObject[] | { objects: SimulationObject[]; duration: number } {
   // Start timing
   const startTime = performance.now();
 
-  
   // Skip non-organism objects
   if (obj.objectType !== ObjectTypeEnum.ORGANISM) {
     // Even for skipped objects, return in the expected format if metrics are requested
@@ -143,7 +163,7 @@ export function doOrganismThings(
     }
     return [obj];
   }
-  
+
   const dna = obj.dna!;
 
   if (!dna) {
@@ -166,20 +186,19 @@ export function doOrganismThings(
   }
   returnArray.push(obj);
 
-  
   // Create random sample of objects to calculate forces from
   const objectSample = getRandomObjectSample(obj, allObjects);
-  
+
   // Calculate force vector based on surrounding objects
   const force = calcForceFromObjectArray(obj, objectSample);
-  
+
   // IMPORTANT: Don't directly assign the force to obj.forceInput as this modifies the original object
   // Instead, create a clone of the object with the modified values
   const updatedObj = {
     ...obj,
     forceInput: force.clone(), // Clone the force vector to avoid reference issues
   };
-  
+
   // Replace the original object in our return array
   const originalIndex = returnArray.indexOf(obj);
   if (originalIndex !== -1) {
@@ -192,12 +211,12 @@ export function doOrganismThings(
 
   // IMPORTANT: Use the updated object instead of the original
   const currentObj = returnArray.find((o) => o.id === obj.id) || obj;
-  
+
   if (shouldReproduce(currentObj, allObjects)) {
     // Create new organism with a completely independent set of vectors
     const newOrganism = createNewOrganism(currentObj);
     const lostEnergy = newOrganism.energy;
-    
+
     // Create a new updated object with reduced energy and updated action history
     // instead of modifying the original
     const updatedAfterReproduction = {
@@ -209,13 +228,13 @@ export function doOrganismThings(
       velocity: currentObj.velocity.clone(),
       forceInput: currentObj.forceInput.clone(),
     };
-    
+
     // Replace the current object in the return array
     const currentIndex = returnArray.indexOf(currentObj);
     if (currentIndex !== -1) {
       returnArray[currentIndex] = updatedAfterReproduction;
     }
-    
+
     // Add the new organism to the return array
     returnArray.push(newOrganism);
   }
