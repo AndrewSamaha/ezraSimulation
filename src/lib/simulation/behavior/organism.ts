@@ -44,6 +44,7 @@ export const createNewOrganism = (
     energy,
     actionHistory: [],
     dna,
+    workingMemory: [],
   };
 };
 

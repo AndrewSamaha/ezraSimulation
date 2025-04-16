@@ -8,7 +8,7 @@ export enum ObjectTypeEnum {
 }
 
 export const ObjectTypes = [ObjectTypeEnum.ORGANISM, ObjectTypeEnum.NUTRIENCE] as const;
-export type ObjectType = typeof ObjectTypes[number];
+export type ObjectType = (typeof ObjectTypes)[number];
 
 export interface SimulationObject {
   id: string;
@@ -23,6 +23,13 @@ export interface SimulationObject {
   energy: number;
   actionHistory: ActionType[];
   dna?: DNA;
+  workingMemory: MemoryEngram[];
+}
+
+export interface MemoryEngram {
+  createdAt: number; // datetime stamp
+  updatedAt: number;
+  object: SimulationObject;
 }
 
 export interface SimulationStep {
