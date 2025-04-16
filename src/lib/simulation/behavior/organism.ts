@@ -12,6 +12,7 @@ const MUTATION_RATE = 0.5;
 const DEFAULT_ENERGY_GIFT = 30;
 const RANDOM_SAMPLE_SIZE = 5;
 const AFFINITY_FORCE_MULTIPLIER = 100;
+const MAX_FORCE = 2;
 
 export const createNewOrganism = (
   sampleSource: DNA | SimulationObject,
@@ -109,7 +110,7 @@ export const calcForceWithAffinity = (
   const affinityDistance = curVector.distance(targetVector);
   const normalizedTargetPosition = targetVector.subtract(curVector).normalize();
   const distanceSquared = affinityDistance * affinityDistance;
-  const force = (forceMultiplier * affinityValue) / distanceSquared;
+  const force = Math.min(MAX_FORCE, (forceMultiplier * affinityValue) / distanceSquared);
   const forceVector = normalizedTargetPosition.multiply(new Victor(force, force));
   return forceVector;
 };
