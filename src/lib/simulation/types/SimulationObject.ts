@@ -30,6 +30,7 @@ export interface MemoryEngram {
   createdAt: number; // datetime stamp
   updatedAt: number;
   object: SimulationObject;
+  distance: number;
 }
 
 export interface SimulationStep {

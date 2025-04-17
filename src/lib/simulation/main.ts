@@ -8,7 +8,7 @@ import Victor from 'victor';
 
 import { doPhysics } from './physics';
 import { doNutrienceThings } from './behavior/nutrience';
-import { doOrganismThings } from './behavior/organism';
+import { doOrganismThings } from './behavior/organism/main';
 
 /**
  * Type definition for simulation processors

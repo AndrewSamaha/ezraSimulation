@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Meta } from '@storybook/react';
 import Victor from 'victor';
 import { ForceVector } from '../../../components/ForceVector';
-import { calcForceWithAffinity } from './organism';
+import { calcForceWithAffinity } from './organism/main';
 import { ObjectTypeEnum } from '@/lib/simulation/types/SimulationObject';
 import {
   PLANT_DNA_TEMPLATE,

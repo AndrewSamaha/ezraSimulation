@@ -121,7 +121,7 @@ export const HERBIVORE_DNA_TEMPLATE: DNA = {
   organismAffinity: [0],
   nutrienceAffinity: [1],
   organismEating: [0],
-  nutrienceEating: [0],
+  nutrienceEating: [1],
   visualSearch: [0],
   stayEarningMultiplier: [1],
   eatEarningMultiplier: [5],
