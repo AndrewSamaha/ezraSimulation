@@ -1,3 +1,5 @@
+import Victor from 'victor';
+
 import { SimulationObject, ObjectTypeEnum } from '@/lib/simulation/types/SimulationObject';
 import { ActionTypeEnum } from '@/lib/simulation/behavior/actions';
 import { calcForceFromObjectArray } from './force';
@@ -60,12 +62,14 @@ export function doOrganismThings(
   const objectSample = getRandomObjectSample(obj, allObjects);
 
   // Calculate force vector based on surrounding objects
-  const force = calcForceFromObjectArray(obj, objectSample);
+  const force = obj.energy > 10 ? calcForceFromObjectArray(obj, objectSample) : new Victor(0, 0);
+  const forceCost = force.lengthSq() + 0.2;
 
   const updatedObj = {
     ...obj,
     forceInput: force.clone(),
     workingMemory: getNewWorkingMemory(obj, objectSample),
+    energy: obj.energy - forceCost,
   };
 
   const foodTargetNearby = shouldEat(obj, updatedObj.workingMemory);

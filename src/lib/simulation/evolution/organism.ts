@@ -127,7 +127,7 @@ export const HERBIVORE_DNA_TEMPLATE: DNA = {
   eatEarningMultiplier: [5],
   energyGiftToOffspring: [0.5],
   reproductionProbability: [0.011],
-  minimumEnergyToReproduce: [200],
+  minimumEnergyToReproduce: [400],
   lineageName: 'Herbivore',
 };
 

@@ -7,6 +7,7 @@ export const shouldReproduce = (obj: SimulationObject, allObjects: SimulationObj
   const organismCount = allObjects.filter((o) => o.objectType === ObjectTypeEnum.ORGANISM).length;
 
   if (organismCount >= MAX_ORGANISM) {
+    console.log('no babies, too many babies');
     return false;
   }
   if (obj.energy < expressGene(obj.dna!, 'minimumEnergyToReproduce')) {
