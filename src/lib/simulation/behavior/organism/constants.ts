@@ -7,3 +7,4 @@ export const MAX_FORCE = 2;
 export const WORKING_MEMORY_SIZE = 3;
 export const MAX_BITE_SIZE = 10;
 export const MIN_EATING_DISTANCE = 10;
+export const MAX_AGE = 2_000;

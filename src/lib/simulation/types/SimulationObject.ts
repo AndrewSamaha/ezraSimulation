@@ -10,6 +10,12 @@ export enum ObjectTypeEnum {
 export const ObjectTypes = [ObjectTypeEnum.ORGANISM, ObjectTypeEnum.NUTRIENCE] as const;
 export type ObjectType = (typeof ObjectTypes)[number];
 
+export interface ActionHistoryItem {
+  action: ActionType;
+  stepNumber: number;
+  ref: { [key: string]: string | number };
+}
+
 export interface SimulationObject {
   id: string;
   objectType: ObjectType;
@@ -21,9 +27,10 @@ export interface SimulationObject {
   forceInput: Victor;
   parentId: string | null;
   energy: number;
-  actionHistory: ActionType[];
+  actionHistory: ActionHistoryItem[];
   dna?: DNA;
   workingMemory: MemoryEngram[];
+  generation: number;
 }
 
 export interface MemoryEngram {

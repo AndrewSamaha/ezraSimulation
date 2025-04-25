@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { SimulationObject } from '@/lib/simulation/types/SimulationObject';
+import Victor from 'victor';
 
 const SHOW_RAW_JSON = false;
 
@@ -23,7 +24,7 @@ export function Drawer({ isOpen, onClose, selectedObject, allObjects, dispatch }
   };
 
   // Convert vector to readable format
-  const formatVector = (vector: any) => {
+  const formatVector = (vector: Victor | { x: number; y: number }) => {
     return `(${Math.round(vector.x)}, ${Math.round(vector.y)})`;
   };
 
@@ -141,10 +142,121 @@ export function Drawer({ isOpen, onClose, selectedObject, allObjects, dispatch }
               <div>{formatVector(selectedObject.forceInput)}</div>
 
               <div className="font-semibold">Parent ID:</div>
-              <div className="truncate">{selectedObject.parentId || 'None'}</div>
+              <div className="truncate flex items-center">
+                {selectedObject.parentId && (
+                  <>
+                    {/* Check if parent is still alive and add indicator */}
+                    {(() => {
+                      const isParentAlive = allObjects.some(obj => obj.id === selectedObject.parentId);
+                      return (
+                        <span 
+                          className={`mr-1 ${isParentAlive ? 'cursor-pointer' : ''}`} 
+                          title={isParentAlive ? 'Parent is alive, click to select' : 'Parent no longer exists'}
+                          onClick={isParentAlive ? () => dispatch({ type: 'SELECT_OBJECT', payload: selectedObject.parentId }) : undefined}
+                        >
+                          {isParentAlive ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          )}
+                        </span>
+                      );
+                    })()}
+                    <span className={allObjects.some(obj => obj.id === selectedObject.parentId) ? 'cursor-pointer hover:underline' : ''}
+                          onClick={allObjects.some(obj => obj.id === selectedObject.parentId) ? 
+                            () => dispatch({ type: 'SELECT_OBJECT', payload: selectedObject.parentId }) : 
+                            undefined}>
+                      {selectedObject.parentId.substring(0, 8)}...
+                    </span>
+                  </>
+                ) || 'None'}
+              </div>
+
+              <div className="font-semibold">Generation:</div>
+              <div>{selectedObject.generation !== undefined ? selectedObject.generation : 'N/A'}</div>
             </div>
 
-            {/* DNA Information */}
+            {/* Action History */}
+            {selectedObject.actionHistory && selectedObject.actionHistory.length > 0 && (
+              <div className="mt-6">
+                <details className="mt-4">
+                  <summary className="cursor-pointer p-2 bg-gray-800 rounded">
+                    View Action History ({selectedObject.actionHistory.length})
+                  </summary>
+                  <div className="p-2 bg-gray-950 rounded mt-2 text-xs overflow-auto max-h-60 border border-gray-800">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="text-left border-b border-gray-700">
+                          <th className="p-1">Step</th>
+                          <th className="p-1">Action</th>
+                          <th className="p-1">Reference</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedObject.actionHistory.map((item, index) => {
+                          // Check if the referenced organism exists in current objects (is still alive)
+                          const refId = typeof item.ref === 'string' ? item.ref : 
+                                      (item.ref && typeof item.ref === 'object' && 'id' in item.ref) ? 
+                                      String(item.ref.id) : null;
+                          
+                          const isAlive = refId ? allObjects.some(obj => obj.id === refId) : false;
+                          
+                          // Create CSS class based on whether organism is alive and clickable
+                          const rowClass = isAlive ? 
+                            "border-b border-gray-800 hover:bg-gray-700 cursor-pointer" : 
+                            "border-b border-gray-800";
+                            
+                          const handleRowClick = () => {
+                            if (isAlive && refId) {
+                              dispatch({ type: 'SELECT_OBJECT', payload: refId });
+                            }
+                          };
+                          
+                          return (
+                            <tr 
+                              key={index} 
+                              className={rowClass}
+                              onClick={handleRowClick}
+                              title={isAlive ? "Click to select this organism" : ""}
+                            >
+                              <td className="p-1">{item.stepNumber}</td>
+                              <td className="p-1">{item.action}</td>
+                              <td className="p-1 truncate max-w-[100px] flex items-center">
+                                {/* Icon showing if organism is alive */}
+                                {refId && (
+                                  <span className="mr-1" title={isAlive ? "Organism is alive" : "Organism is dead"}>
+                                    {isAlive ? (
+                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                      </svg>
+                                    ) : (
+                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                      </svg>
+                                    )}
+                                  </span>
+                                )}
+                                {item.ref ? 
+                                  typeof item.ref === 'string' ? 
+                                    String(item.ref).substring(0, 8) : 
+                                    Object.entries(item.ref as Record<string, unknown>).map(([key, value]) => (
+                                      <div key={key}>{key}: {String(value)}</div>
+                                    ))
+                                  : 'None'}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </details>
+              </div>
+            )}            {/* DNA Information */}
             {selectedObject.dna && (
               <div className="mt-6">
                 <details className="mt-4">

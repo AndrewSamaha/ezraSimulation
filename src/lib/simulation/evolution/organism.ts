@@ -118,10 +118,10 @@ export const PLANT_DNA_TEMPLATE: DNA = {
 };
 
 export const HERBIVORE_DNA_TEMPLATE: DNA = {
-  organismAffinity: [0],
-  nutrienceAffinity: [1],
+  organismAffinity: [0.1],
+  nutrienceAffinity: [0.5],
   organismEating: [0],
-  nutrienceEating: [1],
+  nutrienceEating: [0.8],
   visualSearch: [0],
   stayEarningMultiplier: [1],
   eatEarningMultiplier: [5],
@@ -153,7 +153,7 @@ export const HERBIVORE_DNA_TEMPLATE: DNA = {
 export const mutateDNA = (
   dna: DNA,
   mutationRate: number,
-  mutationMagnitude: number = 0.5,
+  mutationMagnitude: number = 0.2,
   copyGeneRate: number = 0.1,
 ): DNA => {
   // Create a deep copy to avoid modifying the original

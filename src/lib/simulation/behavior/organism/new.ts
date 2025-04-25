@@ -21,6 +21,7 @@ export const createNewOrganism = (
   const energy = isDNA(sampleSource)
     ? DEFAULT_ENERGY_GIFT
     : (sampleSource as SimulationObject).energy * expressGene(dna, 'energyGiftToOffspring');
+  const generation = isDNA(sampleSource) ? 0 : (sampleSource as SimulationObject).generation + 1;
   const id = uuid();
   // Create new organism with random position
   return {
@@ -37,5 +38,6 @@ export const createNewOrganism = (
     actionHistory: [],
     dna,
     workingMemory: [],
+    generation,
   };
 };

@@ -75,9 +75,10 @@ export function doOrganismThings(
   const foodTargetNearby = shouldEat(obj, updatedObj.workingMemory);
   if (foodTargetNearby) {
     const biteSize = getBiteSize(obj, foodTargetNearby);
-    console.log(`biteSize: ${biteSize}`);
-    updatedObj.energy += biteSize;
-    foodTargetNearby.energy -= biteSize;
+    if (biteSize > 0) {
+      updatedObj.energy += biteSize;
+      foodTargetNearby.energy -= biteSize;
+    }
   }
 
   // Replace the original object in our return array
@@ -103,7 +104,14 @@ export function doOrganismThings(
     const updatedAfterReproduction = {
       ...currentObj,
       energy: currentObj.energy - lostEnergy,
-      actionHistory: [ActionTypeEnum.REPRODUCE, ...currentObj.actionHistory],
+      actionHistory: [
+        {
+          action: ActionTypeEnum.REPRODUCE,
+          stepNumber: currentObj.actionHistory.length,
+          ref: newOrganism.id,
+        },
+        ...currentObj.actionHistory,
+      ],
       // Make sure we clone these vectors to avoid any reference issues
       vector: currentObj.vector.clone(),
       velocity: currentObj.velocity.clone(),

@@ -7,13 +7,13 @@ export const shouldReproduce = (obj: SimulationObject, allObjects: SimulationObj
   const organismCount = allObjects.filter((o) => o.objectType === ObjectTypeEnum.ORGANISM).length;
 
   if (organismCount >= MAX_ORGANISM) {
-    console.log('no babies, too many babies');
+    console.log(`no babies, too many babies (${organismCount} >= ${MAX_ORGANISM})`);
     return false;
   }
   if (obj.energy < expressGene(obj.dna!, 'minimumEnergyToReproduce')) {
     return false;
   }
-  if (obj.age <= 20) {
+  if (obj.age <= 100) {
     return false;
   }
   // FIX: This was backwards! Should return true when random value is LESS than probability
