@@ -9,6 +9,7 @@ import { CONTAINER_WIDTH, CONTAINER_HEIGHT } from '@/lib/constants/world';
 import { Card } from '@/components/ui/card';
 import { Drawer } from '@/components/ui/drawer';
 import { PerformancePanel } from '@/components/PerformancePanel';
+import { SaveStatus } from '@/components/SaveStatus';
 
 export default function SimulationPage() {
   const { state, dispatch, isInitialized } = useSimulation();
@@ -256,6 +257,11 @@ export default function SimulationPage() {
              style={{ transform: selectedObject ? 'translateX(-220px)' : 'translateX(0)', transition: 'transform 300ms ease-in-out' }}>
           <div>Step: {state.currentStep} / {state.steps.length - 1}</div>
           <div>Objects: {state.steps[state.currentStep].objects.length}</div>
+          
+          {/* Save Status Indicator */}
+          <div className="mt-2">
+            <SaveStatus />
+          </div>
         </div>
         
         {/* Performance Panel */}

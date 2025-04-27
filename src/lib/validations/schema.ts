@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ObjectTypeEnum } from '@/lib/simulation/types/SimulationObject';
 
 // Base schemas for common fields
 const baseEntitySchema = z.object({
@@ -9,7 +10,7 @@ const baseEntitySchema = z.object({
 // Simulation object schema (matching the structure from SimulationContext)
 export const simulationObjectSchema = z.object({
   id: z.string().uuid(),
-  objectType: z.enum(['ORGANISM', 'NUTRIENCE']),
+  objectType: z.nativeEnum(ObjectTypeEnum),
   vector: z.object({
     x: z.number(),
     y: z.number(),
@@ -32,7 +33,7 @@ export const simulationObjectSchema = z.object({
       action: z.string(),
       stepNumber: z.number(),
       ref: z.record(z.union([z.string(), z.number()])).optional(),
-    })
+    }),
   ),
   dna: z.record(z.any()).optional(),
   workingMemory: z.array(z.record(z.any())),
@@ -65,7 +66,7 @@ export const simulationSchema = baseEntitySchema.extend({
 
 // Schema for creating a new simulation
 export const createSimulationSchema = z.object({
-  name: z.string().min(1, "Simulation name is required"),
+  name: z.string().min(1, 'Simulation name is required'),
   initialStep: simulationStepSchema.optional(),
   config: z.record(z.unknown()).optional(),
 });

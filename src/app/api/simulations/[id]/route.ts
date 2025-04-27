@@ -7,7 +7,7 @@ import { z } from 'zod';
 // GET /api/simulations/[id] - Get a simulation by ID
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     // Validate ID format
     if (!z.string().uuid().safeParse(id).success) {
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 // PATCH /api/simulations/[id] - Update a simulation
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
 
     // Validate ID format
@@ -84,7 +84,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 // DELETE /api/simulations/[id] - Delete a simulation
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     // Validate ID format
     if (!z.string().uuid().safeParse(id).success) {

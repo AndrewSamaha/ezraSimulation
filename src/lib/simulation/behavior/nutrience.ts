@@ -21,6 +21,7 @@ export const createNewNutrience = (parent?: SimulationObject): SimulationObject 
       energy: 100,
       actionHistory: [],
       workingMemory: [],
+      generation: 0,
     };
   }
 
@@ -45,6 +46,7 @@ export const createNewNutrience = (parent?: SimulationObject): SimulationObject 
     energy: 100,
     actionHistory: [],
     workingMemory: [],
+    generation: 0,
   };
 };
 

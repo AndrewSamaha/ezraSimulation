@@ -7,6 +7,7 @@ import React, {
   ReactNode,
   useEffect,
   useState,
+  useCallback,
 } from 'react';
 
 import { calculateNextStep } from '@/lib/simulation/main';
@@ -31,6 +32,13 @@ export interface SimulationState {
   speed: number; // Milliseconds between steps
   selectedObjectId: string | null; // Track selected object by ID
   performanceMetrics: PerformanceMetrics;
+  // Save-related state
+  lastSavedStep: number;
+  isSaving: boolean;
+  saveInterval: number; // How many steps to collect before saving
+  saveQueue: number[]; // Queue of steps to save
+  // Internal tracking state
+  _lastAction?: SimulationAction;
 }
 
 // Define available actions for the simulation
@@ -47,7 +55,13 @@ type SimulationAction =
   | { type: 'REMOVE_OBJECT'; payload: string }
   | { type: 'SET_SIMULATION_STATE'; payload: SimulationStep }
   | { type: 'SELECT_OBJECT'; payload: string | null }
-  | { type: 'INITIALIZE_STATE' };
+  | { type: 'INITIALIZE_STATE' }
+  | { type: 'SAVE_STEP_REQUESTED'; payload: number }
+  | { type: 'SAVE_STEP_STARTED'; payload: number }
+  | { type: 'SAVE_STEP_COMPLETED'; payload: number }
+  | { type: 'SAVE_STEP_FAILED'; payload: { step: number; error: string } }
+  | { type: 'SET_SAVE_INTERVAL'; payload: number }
+  | { type: 'TRIGGER_SAVE_NOW' };
 
 // Empty initial state for server-side rendering
 const emptyInitialState: SimulationState = {
@@ -66,6 +80,11 @@ const emptyInitialState: SimulationState = {
     avgOrganismCalculationTime: 0,
     lastUpdateTimestamp: performance.now(),
   },
+  // Save-related state
+  lastSavedStep: 0,
+  isSaving: false,
+  saveInterval: 50, // Save every 10 steps by default
+  saveQueue: [],
 };
 
 // Function to create the actual initial state (only called on client-side)
@@ -75,9 +94,9 @@ const createInitialState = (): SimulationState => ({
   steps: [
     {
       objects: [
-        ...Array.from({ length: 50 }, () => createNewNutrience()),
+        ...Array.from({ length: 1 }, () => createNewNutrience()),
         //createNewOrganism(PLANT_DNA_TEMPLATE),
-        ...Array.from({ length: 20 }, () => createNewOrganism(HERBIVORE_DNA_TEMPLATE)),
+        ...Array.from({ length: 1 }, () => createNewOrganism(HERBIVORE_DNA_TEMPLATE)),
       ],
     },
   ],
@@ -93,14 +112,64 @@ const createInitialState = (): SimulationState => ({
     avgOrganismCalculationTime: 0,
     lastUpdateTimestamp: performance.now(),
   },
+  // Save-related state
+  lastSavedStep: 0,
+  isSaving: false,
+  saveInterval: 50, // Save every 10 steps by default
+  saveQueue: [],
 });
 
+// Handle save operation
+const saveStepToServer = async (
+  simulationId: string,
+  stepNumber: number,
+  stepData: SimulationStep,
+) => {
+  try {
+    const response = await fetch(`/api/simulations/${simulationId}/steps`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        stepNumber,
+        stepData,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to save step ${stepNumber}: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error saving simulation step:', error);
+    throw error;
+  }
+};
+
+// Load steps saved from server
+const loadSavedSteps = async (simulationId: string) => {
+  try {
+    const response = await fetch(`/api/simulations/${simulationId}/steps`);
+
+    if (!response.ok) {
+      throw new Error(`Failed to load steps: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error loading simulation steps:', error);
+    throw error;
+  }
+};
+
 // Reducer function to handle state updates
-function simulationReducer(state: SimulationState, action: SimulationAction): SimulationState {
+const simulationReducer = (state: SimulationState, action: SimulationAction): SimulationState => {
+  // Store the last action for detecting specific actions in effects
+  const newState = { ...state, _lastAction: action };
   switch (action.type) {
     case 'SELECT_OBJECT':
       return {
-        ...state,
+        ...newState,
         selectedObjectId: action.payload,
       };
     case 'START_SIMULATION':
@@ -109,8 +178,15 @@ function simulationReducer(state: SimulationState, action: SimulationAction): Si
     case 'PAUSE_SIMULATION':
       return { ...state, isRunning: false };
 
-    case 'RESET_SIMULATION':
-      return createInitialState();
+    case 'RESET_SIMULATION': {
+      // When resetting, we need to create a new simulation with a fresh ID
+      const newState = createInitialState();
+      // Clear any pending saves
+      return {
+        ...newState,
+        saveQueue: [],
+      };
+    }
 
     case 'SET_SIMULATION_STATE': {
       return {
@@ -220,10 +296,22 @@ function simulationReducer(state: SimulationState, action: SimulationAction): Si
           }
         }
 
+        const newStep = state.currentStep + 1;
+
+        // Check if we need to queue this step for saving
+        let updatedQueue = [...state.saveQueue];
+        if (newStep - state.lastSavedStep >= state.saveInterval) {
+          // Add this step to the save queue if it's not already there
+          if (!updatedQueue.includes(newStep)) {
+            updatedQueue.push(newStep);
+          }
+        }
+
         return {
           ...state,
-          currentStep: state.currentStep + 1,
+          currentStep: newStep,
           selectedObjectId: updatedSelectedObjectId, // Maintain selection across steps
+          saveQueue: updatedQueue,
         };
       }
     }
@@ -305,10 +393,51 @@ function simulationReducer(state: SimulationState, action: SimulationAction): Si
       };
     }
 
+    // Save-related actions
+    case 'SAVE_STEP_REQUESTED':
+      return {
+        ...state,
+        saveQueue: state.saveQueue.includes(action.payload)
+          ? state.saveQueue
+          : [...state.saveQueue, action.payload],
+      };
+
+    case 'SAVE_STEP_STARTED':
+      return {
+        ...state,
+        isSaving: true,
+      };
+
+    case 'SAVE_STEP_COMPLETED':
+      return {
+        ...state,
+        isSaving: false,
+        lastSavedStep: Math.max(state.lastSavedStep, action.payload),
+        saveQueue: state.saveQueue.filter((step) => step !== action.payload),
+      };
+
+    case 'SAVE_STEP_FAILED':
+      // We might want to retry later, so keep the step in the queue
+      return {
+        ...state,
+        isSaving: false,
+      };
+
+    case 'SET_SAVE_INTERVAL':
+      return {
+        ...state,
+        saveInterval: action.payload,
+      };
+
+    case 'TRIGGER_SAVE_NOW':
+      // This action only triggers the side effect to save immediately
+      // The actual state changes will happen through SAVE_STEP_STARTED, SAVE_STEP_COMPLETED etc.
+      return newState;
+
     default:
-      return state;
+      return newState;
   }
-}
+};
 
 // Create the context
 const SimulationContext = createContext<{
@@ -338,6 +467,121 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
       setIsInitialized(true);
     }
   }, [isInitialized]);
+
+  // Process save queue when it changes
+  const processSaveQueue = useCallback(async () => {
+    if (state.saveQueue.length === 0 || state.isSaving) return;
+
+    const stepToSave = state.saveQueue[0];
+    if (stepToSave <= state.lastSavedStep) {
+      // Step already saved, remove from queue
+      dispatch({ type: 'SAVE_STEP_COMPLETED', payload: stepToSave });
+      return;
+    }
+
+    // Start saving process
+    dispatch({ type: 'SAVE_STEP_STARTED', payload: stepToSave });
+
+    try {
+      // Check if we have the step data
+      if (stepToSave >= state.steps.length) {
+        throw new Error(`Step ${stepToSave} not found in simulation state`);
+      }
+
+      const stepData = state.steps[stepToSave];
+
+      // Save to server (non-blocking)
+      await saveStepToServer(state.id, stepToSave, stepData);
+
+      // Mark as saved
+      dispatch({ type: 'SAVE_STEP_COMPLETED', payload: stepToSave });
+
+      // Store in localStorage that this simulation was saved up to this step
+      localStorage.setItem(`simulation_${state.id}_lastSaved`, stepToSave.toString());
+    } catch (error) {
+      console.error('Error saving step:', error);
+      dispatch({
+        type: 'SAVE_STEP_FAILED',
+        payload: {
+          step: stepToSave,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        },
+      });
+    }
+  }, [state.saveQueue, state.isSaving, state.lastSavedStep, state.id, state.steps]);
+
+  // Process save queue whenever it changes
+  useEffect(() => {
+    if (isInitialized) {
+      void processSaveQueue();
+    }
+  }, [processSaveQueue, state.saveQueue, isInitialized]);
+
+  // Handle manual save trigger
+  const handleManualSave = useCallback(() => {
+    // Add all unsaved steps to the queue
+    const unsavedSteps = [];
+    for (let i = state.lastSavedStep + 1; i <= state.currentStep; i++) {
+      if (!state.saveQueue.includes(i)) {
+        unsavedSteps.push(i);
+      }
+    }
+
+    if (unsavedSteps.length > 0) {
+      // Add each step to the save queue
+      for (const step of unsavedSteps) {
+        dispatch({ type: 'SAVE_STEP_REQUESTED', payload: step });
+      }
+    }
+  }, [state.lastSavedStep, state.currentStep, state.saveQueue, dispatch]);
+
+  // Watch for the TRIGGER_SAVE_NOW action
+  useEffect(() => {
+    const actionType = (state as any)._lastAction?.type;
+    if (actionType === 'TRIGGER_SAVE_NOW') {
+      handleManualSave();
+    }
+  }, [state, handleManualSave]);
+
+  // Auto-save steps when reaching the save interval
+  useEffect(() => {
+    if (isInitialized && !state.isSaving) {
+      // Check if we've reached the save interval
+      const stepsSinceLastSave = state.currentStep - state.lastSavedStep;
+
+      if (stepsSinceLastSave >= state.saveInterval) {
+        // Add the current step to the save queue if not already there
+        if (!state.saveQueue.includes(state.currentStep)) {
+          dispatch({ type: 'SAVE_STEP_REQUESTED', payload: state.currentStep });
+        }
+      }
+    }
+  }, [
+    isInitialized,
+    state.currentStep,
+    state.lastSavedStep,
+    state.saveInterval,
+    state.isSaving,
+    state.saveQueue,
+  ]);
+
+  // Check for unsaved steps when the component mounts
+  useEffect(() => {
+    if (isInitialized) {
+      // Check localStorage for unsaved steps for this simulation
+      const lastSaved = localStorage.getItem(`simulation_${state.id}_lastSaved`);
+      if (lastSaved) {
+        const lastSavedStep = parseInt(lastSaved, 10);
+        if (!isNaN(lastSavedStep)) {
+          // Update lastSavedStep in state
+          if (lastSavedStep > state.lastSavedStep) {
+            // Use direct dispatch to avoid stale state issues
+            dispatch({ type: 'SAVE_STEP_COMPLETED', payload: lastSavedStep });
+          }
+        }
+      }
+    }
+  }, [isInitialized, state.id]);
 
   return (
     <SimulationContext.Provider value={{ state, dispatch, isInitialized }}>
