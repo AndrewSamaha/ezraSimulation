@@ -37,6 +37,8 @@ export interface SimulationState {
   isSaving: boolean;
   saveInterval: number; // How many steps to collect before saving
   saveQueue: number[]; // Queue of steps to save
+  isSimulationSaved: boolean; // Track if simulation has been created on the server
+  serverId?: string; // Server-generated ID, if different from client ID
   // Internal tracking state
   _lastAction?: SimulationAction;
 }
@@ -61,7 +63,8 @@ type SimulationAction =
   | { type: 'SAVE_STEP_COMPLETED'; payload: number }
   | { type: 'SAVE_STEP_FAILED'; payload: { step: number; error: string } }
   | { type: 'SET_SAVE_INTERVAL'; payload: number }
-  | { type: 'TRIGGER_SAVE_NOW' };
+  | { type: 'TRIGGER_SAVE_NOW' }
+  | { type: 'SIMULATION_SAVED'; payload?: { serverId: string } };
 
 // Empty initial state for server-side rendering
 const emptyInitialState: SimulationState = {
@@ -83,8 +86,10 @@ const emptyInitialState: SimulationState = {
   // Save-related state
   lastSavedStep: 0,
   isSaving: false,
-  saveInterval: 50, // Save every 10 steps by default
+  saveInterval: 50, // Save every 50 steps by default
   saveQueue: [],
+  isSimulationSaved: false, // Initialize as not saved
+  // serverId will be set when the simulation is first saved
 };
 
 // Function to create the actual initial state (only called on client-side)
@@ -115,49 +120,95 @@ const createInitialState = (): SimulationState => ({
   // Save-related state
   lastSavedStep: 0,
   isSaving: false,
-  saveInterval: 50, // Save every 10 steps by default
+  saveInterval: 50, // Save every 50 steps by default
   saveQueue: [],
+  isSimulationSaved: false, // Initialize as not saved
 });
 
-// Handle save operation
+// Save a simulation to the server
+const saveSimulationToServer = async (simulationId: string, name: string = 'New Simulation') => {
+  try {
+    console.log('Creating simulation with ID:', simulationId);
+    const response = await fetch('/api/simulations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: simulationId, // Pass the client-generated ID to the server
+        name,
+        config: {}, // Could add configuration options here
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('Error response from server:', errorData);
+      throw new Error(`Failed to create simulation: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error creating simulation:', error);
+    throw error;
+  }
+};
+
+// Handle save step operation
 const saveStepToServer = async (
   simulationId: string,
   stepNumber: number,
   stepData: SimulationStep,
+  isSimulationSaved = false,
 ) => {
   try {
-    const response = await fetch(`/api/simulations/${simulationId}/steps`, {
+    let serverSimulationId = simulationId;
+    let savedSimulation; // Declare this to return later
+    
+    // If simulation hasn't been saved to the server yet, save it first
+    if (!isSimulationSaved) {
+      console.log('Creating simulation on server before saving step...');
+      savedSimulation = await saveSimulationToServer(simulationId);
+      console.log('Simulation created:', savedSimulation);
+      
+      // Use the server-returned ID for all future operations
+      if (savedSimulation.id) {
+        if (savedSimulation.id !== simulationId) {
+          console.log(`Using server-generated ID ${savedSimulation.id} instead of ${simulationId}`);
+          // Store the server ID for future use
+          serverSimulationId = savedSimulation.id;
+        }
+      } else {
+        console.error('Server did not return a simulation ID');
+        throw new Error('Server did not return a simulation ID');
+      }
+    }
+
+    console.log(`Saving step ${stepNumber} for simulation ${serverSimulationId}`);
+    const response = await fetch(`/api/simulations/${serverSimulationId}/steps`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        simulationId: serverSimulationId,
         stepNumber,
         stepData,
       }),
     });
 
     if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('Server error details:', errorData);
       throw new Error(`Failed to save step ${stepNumber}: ${response.statusText}`);
     }
 
-    return await response.json();
+    const result = await response.json();
+    
+    // If this was a first-time save, include the server simulation ID in the result
+    if (!isSimulationSaved && savedSimulation) {
+      return { ...result, simulationId: serverSimulationId };
+    }
+    
+    return result;
   } catch (error) {
     console.error('Error saving simulation step:', error);
-    throw error;
-  }
-};
-
-// Load steps saved from server
-const loadSavedSteps = async (simulationId: string) => {
-  try {
-    const response = await fetch(`/api/simulations/${simulationId}/steps`);
-
-    if (!response.ok) {
-      throw new Error(`Failed to load steps: ${response.statusText}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Error loading simulation steps:', error);
     throw error;
   }
 };
@@ -299,7 +350,7 @@ const simulationReducer = (state: SimulationState, action: SimulationAction): Si
         const newStep = state.currentStep + 1;
 
         // Check if we need to queue this step for saving
-        let updatedQueue = [...state.saveQueue];
+        const updatedQueue = [...state.saveQueue]; // checked - not it
         if (newStep - state.lastSavedStep >= state.saveInterval) {
           // Add this step to the save queue if it's not already there
           if (!updatedQueue.includes(newStep)) {
@@ -395,11 +446,10 @@ const simulationReducer = (state: SimulationState, action: SimulationAction): Si
 
     // Save-related actions
     case 'SAVE_STEP_REQUESTED':
+      console.log(`SAVE_STEP_REQUESTED: Adding step ${action.payload} to save queue`);
       return {
         ...state,
-        saveQueue: state.saveQueue.includes(action.payload)
-          ? state.saveQueue
-          : [...state.saveQueue, action.payload],
+        saveQueue: [...state.saveQueue, action.payload],
       };
 
     case 'SAVE_STEP_STARTED':
@@ -433,6 +483,14 @@ const simulationReducer = (state: SimulationState, action: SimulationAction): Si
       // This action only triggers the side effect to save immediately
       // The actual state changes will happen through SAVE_STEP_STARTED, SAVE_STEP_COMPLETED etc.
       return newState;
+
+    case 'SIMULATION_SAVED':
+      return {
+        ...state,
+        isSimulationSaved: true,
+        // If a server ID was provided, store it for future API calls
+        ...(action.payload?.serverId ? { serverId: action.payload.serverId } : {}),
+      };
 
     default:
       return newState;
@@ -468,80 +526,102 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
     }
   }, [isInitialized]);
 
-  // Process save queue when it changes
+  // Process the save queue when not saving and queue has items
   const processSaveQueue = useCallback(async () => {
     if (state.saveQueue.length === 0 || state.isSaving) return;
 
-    const stepToSave = state.saveQueue[0];
-    if (stepToSave <= state.lastSavedStep) {
-      // Step already saved, remove from queue
-      dispatch({ type: 'SAVE_STEP_COMPLETED', payload: stepToSave });
-      return;
-    }
+    // Get the next step to save
+    const nextToSave = state.saveQueue[0]; // This is a step number
+    const stepData = state.steps[nextToSave];
 
-    // Start saving process
-    dispatch({ type: 'SAVE_STEP_STARTED', payload: stepToSave });
-
+    // Use the server ID if available, otherwise use the client ID
+    const simulationId = state.serverId || state.id;
+    console.log(`Processing save for step ${nextToSave} using simulation ID: ${simulationId}`);
+    
     try {
-      // Check if we have the step data
-      if (stepToSave >= state.steps.length) {
-        throw new Error(`Step ${stepToSave} not found in simulation state`);
+      dispatch({ type: 'SAVE_STEP_STARTED', payload: nextToSave });
+
+      // Pass the simulation saved state to saveStepToServer
+      const result = await saveStepToServer(simulationId, nextToSave, stepData, state.isSimulationSaved);
+      console.log('Save step result:', result);
+      
+      // If this was the first successful save, mark the simulation as saved
+      if (!state.isSimulationSaved) {
+        // If server returned a different ID, store it
+        if (result && result.simulationId && result.simulationId !== simulationId) {
+          console.log(`Storing server-generated ID: ${result.simulationId}`);
+          dispatch({ 
+            type: 'SIMULATION_SAVED',
+            payload: { serverId: result.simulationId },
+          });
+        } else {
+          dispatch({ type: 'SIMULATION_SAVED' });
+        }
       }
 
-      const stepData = state.steps[stepToSave];
-
-      // Save to server (non-blocking)
-      await saveStepToServer(state.id, stepToSave, stepData);
-
-      // Mark as saved
-      dispatch({ type: 'SAVE_STEP_COMPLETED', payload: stepToSave });
+      dispatch({ type: 'SAVE_STEP_COMPLETED', payload: nextToSave });
 
       // Store in localStorage that this simulation was saved up to this step
-      localStorage.setItem(`simulation_${state.id}_lastSaved`, stepToSave.toString());
+      localStorage.setItem(`simulation_${state.id}_lastSaved`, nextToSave.toString());
     } catch (error) {
-      console.error('Error saving step:', error);
+      console.error('Failed to save step:', error);
       dispatch({
         type: 'SAVE_STEP_FAILED',
         payload: {
-          step: stepToSave,
+          step: nextToSave,
           error: error instanceof Error ? error.message : 'Unknown error',
         },
       });
     }
-  }, [state.saveQueue, state.isSaving, state.lastSavedStep, state.id, state.steps]);
+  }, [state.saveQueue, state.isSaving, state.id, state.steps, state.isSimulationSaved, state.serverId, dispatch]);
 
-  // Process save queue whenever it changes
+  // Process the save queue when not saving and queue has items
   useEffect(() => {
-    if (isInitialized) {
-      void processSaveQueue();
+    // Don't run on server
+    if (typeof window === 'undefined') return;
+
+    if (state.saveQueue.length > 0 && !state.isSaving) {
+      processSaveQueue();
     }
-  }, [processSaveQueue, state.saveQueue, isInitialized]);
+  }, [state.saveQueue, state.isSaving, state.id, state.isSimulationSaved, processSaveQueue]);
 
   // Handle manual save trigger
   const handleManualSave = useCallback(() => {
     // Add all unsaved steps to the queue
     const unsavedSteps = [];
     for (let i = state.lastSavedStep + 1; i <= state.currentStep; i++) {
-      if (!state.saveQueue.includes(i)) {
-        unsavedSteps.push(i);
+      if (!state.saveQueue.includes(i)) { // Check if the step number is already in the queue
+        if (i < state.steps.length) {
+          unsavedSteps.push(i); // Just push the step number
+        }
       }
     }
 
     if (unsavedSteps.length > 0) {
+      console.log(`Adding ${unsavedSteps.length} unsaved steps to the queue`);
       // Add each step to the save queue
-      for (const step of unsavedSteps) {
-        dispatch({ type: 'SAVE_STEP_REQUESTED', payload: step });
+      for (const stepNumber of unsavedSteps) {
+        dispatch({ type: 'SAVE_STEP_REQUESTED', payload: stepNumber });
       }
     }
-  }, [state.lastSavedStep, state.currentStep, state.saveQueue, dispatch]);
+  }, [state.lastSavedStep, state.currentStep, state.saveQueue, state.steps, dispatch]);
 
   // Watch for the TRIGGER_SAVE_NOW action
   useEffect(() => {
-    const actionType = (state as any)._lastAction?.type;
+    const actionType = (state._lastAction as SimulationAction | undefined)?.type;
     if (actionType === 'TRIGGER_SAVE_NOW') {
+      console.log('Manual save triggered');
       handleManualSave();
     }
   }, [state, handleManualSave]);
+
+  // Process save queue whenever it changes
+  useEffect(() => {
+    if (isInitialized && state.saveQueue.length > 0 && !state.isSaving) {
+      console.log(`Processing save queue with ${state.saveQueue.length} items`);
+      void processSaveQueue();
+    }
+  }, [processSaveQueue, state.saveQueue, state.isSaving, isInitialized]);
 
   // Auto-save steps when reaching the save interval
   useEffect(() => {
@@ -552,7 +632,15 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
       if (stepsSinceLastSave >= state.saveInterval) {
         // Add the current step to the save queue if not already there
         if (!state.saveQueue.includes(state.currentStep)) {
-          dispatch({ type: 'SAVE_STEP_REQUESTED', payload: state.currentStep });
+          if (state.currentStep < state.steps.length) {
+            console.log(
+              `Auto-saving step ${state.currentStep} (${stepsSinceLastSave} steps since last save)`,
+            );
+            dispatch({
+              type: 'SAVE_STEP_REQUESTED',
+              payload: state.currentStep, // Just pass the step number
+            });
+          }
         }
       }
     }
@@ -563,6 +651,8 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
     state.saveInterval,
     state.isSaving,
     state.saveQueue,
+    state.steps,
+    dispatch,
   ]);
 
   // Check for unsaved steps when the component mounts
