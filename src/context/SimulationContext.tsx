@@ -99,9 +99,9 @@ const createInitialState = (): SimulationState => ({
   steps: [
     {
       objects: [
-        ...Array.from({ length: 1 }, () => createNewNutrience()),
+        ...Array.from({ length: 50 }, () => createNewNutrience()),
         //createNewOrganism(PLANT_DNA_TEMPLATE),
-        ...Array.from({ length: 1 }, () => createNewOrganism(HERBIVORE_DNA_TEMPLATE)),
+        ...Array.from({ length: 50 }, () => createNewOrganism(HERBIVORE_DNA_TEMPLATE)),
       ],
     },
   ],
@@ -162,13 +162,12 @@ const saveStepToServer = async (
   try {
     let serverSimulationId = simulationId;
     let savedSimulation; // Declare this to return later
-    
+
     // If simulation hasn't been saved to the server yet, save it first
     if (!isSimulationSaved) {
       console.log('Creating simulation on server before saving step...');
       savedSimulation = await saveSimulationToServer(simulationId);
-      console.log('Simulation created:', savedSimulation);
-      
+
       // Use the server-returned ID for all future operations
       if (savedSimulation.id) {
         if (savedSimulation.id !== simulationId) {
@@ -200,12 +199,12 @@ const saveStepToServer = async (
     }
 
     const result = await response.json();
-    
+
     // If this was a first-time save, include the server simulation ID in the result
     if (!isSimulationSaved && savedSimulation) {
       return { ...result, simulationId: serverSimulationId };
     }
-    
+
     return result;
   } catch (error) {
     console.error('Error saving simulation step:', error);
@@ -537,20 +536,24 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
     // Use the server ID if available, otherwise use the client ID
     const simulationId = state.serverId || state.id;
     console.log(`Processing save for step ${nextToSave} using simulation ID: ${simulationId}`);
-    
+
     try {
       dispatch({ type: 'SAVE_STEP_STARTED', payload: nextToSave });
 
       // Pass the simulation saved state to saveStepToServer
-      const result = await saveStepToServer(simulationId, nextToSave, stepData, state.isSimulationSaved);
-      console.log('Save step result:', result);
-      
+      const result = await saveStepToServer(
+        simulationId,
+        nextToSave,
+        stepData,
+        state.isSimulationSaved,
+      );
+
       // If this was the first successful save, mark the simulation as saved
       if (!state.isSimulationSaved) {
         // If server returned a different ID, store it
         if (result && result.simulationId && result.simulationId !== simulationId) {
           console.log(`Storing server-generated ID: ${result.simulationId}`);
-          dispatch({ 
+          dispatch({
             type: 'SIMULATION_SAVED',
             payload: { serverId: result.simulationId },
           });
@@ -573,7 +576,15 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
         },
       });
     }
-  }, [state.saveQueue, state.isSaving, state.id, state.steps, state.isSimulationSaved, state.serverId, dispatch]);
+  }, [
+    state.saveQueue,
+    state.isSaving,
+    state.id,
+    state.steps,
+    state.isSimulationSaved,
+    state.serverId,
+    dispatch,
+  ]);
 
   // Process the save queue when not saving and queue has items
   useEffect(() => {
@@ -590,7 +601,8 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
     // Add all unsaved steps to the queue
     const unsavedSteps = [];
     for (let i = state.lastSavedStep + 1; i <= state.currentStep; i++) {
-      if (!state.saveQueue.includes(i)) { // Check if the step number is already in the queue
+      if (!state.saveQueue.includes(i)) {
+        // Check if the step number is already in the queue
         if (i < state.steps.length) {
           unsavedSteps.push(i); // Just push the step number
         }
