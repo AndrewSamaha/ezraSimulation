@@ -587,14 +587,14 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
   ]);
 
   // Process the save queue when not saving and queue has items
-  useEffect(() => {
-    // Don't run on server
-    if (typeof window === 'undefined') return;
+  // useEffect(() => {
+  //   // Don't run on server
+  //   if (typeof window === 'undefined') return;
 
-    if (state.saveQueue.length > 0 && !state.isSaving) {
-      processSaveQueue();
-    }
-  }, [state.saveQueue, state.isSaving, state.id, state.isSimulationSaved, processSaveQueue]);
+  //   if (state.saveQueue.length > 0 && !state.isSaving) {
+  //     processSaveQueue();
+  //   }
+  // }, [state.saveQueue, state.isSaving, state.id, state.isSimulationSaved, processSaveQueue]);
 
   // Handle manual save trigger
   const handleManualSave = useCallback(() => {
