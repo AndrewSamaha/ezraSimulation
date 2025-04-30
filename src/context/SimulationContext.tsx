@@ -182,13 +182,22 @@ const saveStepToServer = async (
     }
 
     console.log(`Saving step ${stepNumber} for simulation ${serverSimulationId}`);
+
+    // set working memory to empty array for simulationObjects
+    const saveStepData = {
+      objects: stepData.objects.map((obj) => ({
+        ...obj,
+        workingMemory: [],
+      })),
+    };
+
     const response = await fetch(`/api/simulations/${serverSimulationId}/steps`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         simulationId: serverSimulationId,
         stepNumber,
-        stepData,
+        stepData: saveStepData,
       }),
     });
 
