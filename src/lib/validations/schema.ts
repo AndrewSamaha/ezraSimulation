@@ -32,7 +32,7 @@ export const simulationObjectSchema = z.object({
     z.object({
       action: z.string(),
       stepNumber: z.number(),
-      ref: z.record(z.union([z.string(), z.number()])).optional(),
+      ref: z.string(), //z.record(z.union([z.string(), z.number()])).optional(),
     }),
   ),
   dna: z.record(z.any()).optional(),

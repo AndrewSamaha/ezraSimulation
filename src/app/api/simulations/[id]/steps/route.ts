@@ -56,6 +56,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     const result = saveSimulationStepSchema.safeParse(fullBody);
 
     if (!result.success) {
+      console.dir(fullBody, { depth: null });
       return NextResponse.json(
         { error: 'Invalid step data', details: result.error.format() },
         { status: 400 },
