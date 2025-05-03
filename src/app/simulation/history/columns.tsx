@@ -85,7 +85,10 @@ export const columns: ColumnDef<Simulation>[] = [
     id: 'actions',
     cell: ({ row }) => {
       return (
-        <div className="flex justify-end text-white">
+        <div className="flex justify-end space-x-2 text-white">
+          <Button variant="ghost" size="sm" asChild>
+            <Link href={`/simulation/history/${row.original.id}`}>Details</Link>
+          </Button>
           <Button variant="ghost" size="sm" asChild>
             <Link href={`/simulation/run?id=${row.original.id}`}>Open</Link>
           </Button>
