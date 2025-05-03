@@ -10,9 +10,9 @@ export default {
   dialect: 'postgresql',
   dbCredentials: {
     host: 'localhost',
-    port: Number(process.env.POSTGRES_PORT || 54322),
-    user: process.env.POSTGRES_USER || 'ezra',
-    password: process.env.POSTGRES_PASSWORD || 'simulationpassword',
-    database: process.env.POSTGRES_DB || 'ezra_simulation',
+    port: Number(process.env.POSTGRES_PORT),
+    user: process.env.POSTGRES_USER,
+    password: process.env.POSTGRES_PASSWORD,
+    database: process.env.POSTGRES_DB,
   },
 } satisfies Config;

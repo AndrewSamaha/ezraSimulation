@@ -9,18 +9,18 @@ dotenv.config({ path: resolve(process.cwd(), '.env.local') });
 
 // Build connection string from environment variables
 const getConnectionString = () => {
-  const user = process.env.POSTGRES_USER || 'ezra';
-  const password = process.env.POSTGRES_PASSWORD || 'simulationpassword';
-  const host = 'localhost';
-  const port = process.env.POSTGRES_PORT || '54322';
-  const database = process.env.POSTGRES_DB || 'ezra_simulation';
+  const user = process.env.POSTGRES_USER;
+  const password = process.env.POSTGRES_PASSWORD;
+  const host = process.env.POSTGRES_HOST;
+  const port = process.env.POSTGRES_PORT;
+  const database = process.env.POSTGRES_DB;
 
   return `postgresql://${user}:${password}@${host}:${port}/${database}`;
 };
 
 async function main() {
   console.log('Starting migration...');
-  
+
   // Create a PostgreSQL connection pool
   const pool = new Pool({
     connectionString: getConnectionString(),
