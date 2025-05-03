@@ -68,7 +68,10 @@ export const stepColumns: ColumnDef<SimulationStep>[] = [
           <Button 
             variant="ghost" 
             size="sm" 
-            onClick={() => {
+            onClick={(e) => {
+              // Stop event propagation to prevent row click from triggering
+              e.stopPropagation();
+              
               const detailElement = document.getElementById(`step-${row.original.stepNumber}-detail`);
               if (detailElement) {
                 // Toggle visibility

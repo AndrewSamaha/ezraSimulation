@@ -3,8 +3,8 @@ import { getSimulations } from './data-access';
 import { Suspense } from 'react';
 import { SimulationHistoryTable } from './SimulationHistoryTable';
 
-export default function HistoryPage() {
-  const simulations = getSimulations();
+export default async function HistoryPage() {
+  const simulations = await getSimulations();
 
   return (
     <div className="w-full h-screen pt-[10em] bg-black bg-contain bg-no-repeat bg-center relative overflow-x-hidden p-6">

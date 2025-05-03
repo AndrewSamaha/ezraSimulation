@@ -35,8 +35,8 @@ export const columns: ColumnDef<Simulation>[] = [
       return (
         <div className="text-left font-medium text-white">
           <Link
-            href={`/simulation/run?id=${row.original.id}`}
-            className="text-blue-500 hover:text-blue-300 hover:underline"
+            href={`/simulation/history/${row.original.id}`}
+            // className="text-blue-500 hover:text-blue-300 hover:underline"
           >
             {row.getValue('name') || `Simulation ${row.original.id.substring(0, 8)}`}
           </Link>

@@ -1,24 +1,30 @@
-'use server';
+'use client';
 
 import { DataTable } from '@/components/ui/data-table';
 import { columns } from './columns';
 import { Simulation } from './columns';
+import { useRouter } from 'next/navigation';
 
-// Client component to prevent server component from re-rendering
-export async function SimulationHistoryTable({
+// Client component to handle row clicks and navigation
+export function SimulationHistoryTable({
   initialData,
 }: {
-  initialData: Promise<Simulation[]>;
+  initialData: Simulation[];
 }) {
-  // Store the data in state to prevent continuous refetching
-  const data = await initialData;
+  const router = useRouter();
+
+  // Handle row click to navigate to simulation details
+  const handleRowClick = (simulation: Simulation) => {
+    router.push(`/simulation/history/${simulation.id}`);
+  };
 
   return (
     <DataTable
       columns={columns}
-      data={data}
+      data={initialData}
       searchColumn="name"
       searchPlaceholder="Search simulations..."
+      onRowClick={handleRowClick}
     />
   );
 }
