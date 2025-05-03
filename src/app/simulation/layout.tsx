@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
+import NavigationMenu from '@/components/ui/NavigationMenu';
 
 export const metadata: Metadata = {
   title: "Ezra's Simulation",
@@ -26,6 +27,9 @@ export default function RootLayout({
             priority
           />
         </Link>
+        
+        {/* Navigation Menu */}
+        <NavigationMenu />
       </div>
     </div>
   );
