@@ -17,7 +17,7 @@ const styleRules = {
   semi: ['error', 'always'],
   'comma-dangle': ['error', 'always-multiline'],
   'arrow-parens': ['error', 'always'],
-  'max-len': ['warn', { code: 100 }],
+  // 'max-len': ['warn', { code: 100 }],
 };
 
 // Define ESLint configuration
