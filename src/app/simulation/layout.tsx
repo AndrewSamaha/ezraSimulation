@@ -1,10 +1,10 @@
-import type { Metadata } from "next";
-import Image from "next/image";
-import Link from "next/link";
+import type { Metadata } from 'next';
+import Image from 'next/image';
+import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: "Ezra's Simulation",
-  description: "A simulation of evolution in a virtual world",
+  description: 'A simulation of evolution in a virtual world',
 };
 
 export default function RootLayout({
@@ -16,9 +16,7 @@ export default function RootLayout({
     <div>
       {children}
       <div className="absolute p-4 top-0 left-0">
-        <Link
-          href="/"
-        >
+        <Link href="/">
           <Image
             className="dark:invert"
             src="/lionFace.whiteonblack.small.png"
