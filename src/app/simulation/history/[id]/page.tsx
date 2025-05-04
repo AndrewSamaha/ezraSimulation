@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, Database } from 'lucide-react';
+import { ArrowLeft, Database, Dna } from 'lucide-react';
 
 // This page displays a simulation's data in JSON format
 export default async function SimulationDetailPage({
@@ -70,12 +70,19 @@ export default async function SimulationDetailPage({
             </pre>
           </div>
 
-          {/* Link to Simulation Steps */}
-          <div className="mt-8">
+          {/* Links to Simulation Steps and Organisms */}
+          <div className="mt-8 flex flex-wrap gap-4">
             <Button variant="outline" className="text-black" asChild>
               <Link href={`/simulation/history/${id}/steps`}>
                 <Database className="mr-2 h-4 w-4" />
                 View Simulation Steps
+              </Link>
+            </Button>
+            
+            <Button variant="outline" className="text-black" asChild>
+              <Link href={`/simulation/history/${id}/organisms`}>
+                <Dna className="mr-2 h-4 w-4" />
+                View Simulation Organisms
               </Link>
             </Button>
           </div>
