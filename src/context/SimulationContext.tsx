@@ -86,7 +86,7 @@ const emptyInitialState: SimulationState = {
   // Save-related state
   lastSavedStep: 0,
   isSaving: false,
-  saveInterval: 50, // Save every 50 steps by default
+  saveInterval: 100, // Save every 50 steps by default
   saveQueue: [],
   isSimulationSaved: false, // Initialize as not saved
   // serverId will be set when the simulation is first saved
@@ -120,7 +120,7 @@ const createInitialState = (): SimulationState => ({
   // Save-related state
   lastSavedStep: 0,
   isSaving: false,
-  saveInterval: 50, // Save every 50 steps by default
+  saveInterval: 100, // Save every 50 steps by default
   saveQueue: [],
   isSimulationSaved: false, // Initialize as not saved
 });
