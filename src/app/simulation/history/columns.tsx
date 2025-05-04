@@ -18,6 +18,33 @@ export type Simulation = {
 
 export const columns: ColumnDef<Simulation>[] = [
   {
+    id: 'select',
+    header: ({ table }) => (
+      <div className="px-1">
+        <input
+          type="checkbox"
+          checked={table.getIsAllPageRowsSelected()}
+          onChange={(e) => table.toggleAllPageRowsSelected(e.target.checked)}
+          aria-label="Select all"
+          className="h-4 w-4 rounded-sm border-gray-300 focus:ring-blue-500"
+        />
+      </div>
+    ),
+    cell: ({ row }) => (
+      <div className="px-1" onClick={(e) => e.stopPropagation()}>
+        <input
+          type="checkbox"
+          checked={row.getIsSelected()}
+          onChange={(e) => row.toggleSelected(e.target.checked)}
+          aria-label="Select row"
+          className="h-4 w-4 rounded-sm border-gray-300 focus:ring-blue-500"
+        />
+      </div>
+    ),
+    enableSorting: false,
+    enableHiding: false,
+  },
+  {
     accessorKey: 'name',
     header: ({ column }) => {
       return (
@@ -89,9 +116,9 @@ export const columns: ColumnDef<Simulation>[] = [
           <Button variant="ghost" size="sm" asChild>
             <Link href={`/simulation/history/${row.original.id}`}>Details</Link>
           </Button>
-          <Button variant="ghost" size="sm" asChild>
+          {/* <Button variant="ghost" size="sm" asChild>
             <Link href={`/simulation/run?id=${row.original.id}`}>Open</Link>
-          </Button>
+          </Button> */}
         </div>
       );
     },

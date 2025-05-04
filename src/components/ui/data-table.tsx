@@ -10,6 +10,8 @@ import {
   getSortedRowModel,
   ColumnFiltersState,
   getFilteredRowModel,
+  RowSelectionState,
+  OnChangeFn,
 } from '@tanstack/react-table';
 
 import {
@@ -30,6 +32,10 @@ interface DataTableProps<TData, TValue> {
   searchColumn?: string;
   searchPlaceholder?: string;
   onRowClick?: (row: TData) => void;
+  enableRowSelection?: boolean;
+  onDeleteSelected?: () => void;
+  rowSelection?: RowSelectionState;
+  onRowSelectionChange?: (rowSelection: RowSelectionState) => void;
 }
 
 export function DataTable<TData, TValue>({
@@ -38,9 +44,32 @@ export function DataTable<TData, TValue>({
   searchColumn,
   searchPlaceholder = 'Search...',
   onRowClick,
+  enableRowSelection = false,
+  onDeleteSelected,
+  rowSelection: externalRowSelection,
+  onRowSelectionChange,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [internalRowSelection, setInternalRowSelection] = useState<RowSelectionState>({});
+  
+  // Use external row selection if provided, otherwise use internal state
+  const rowSelection = externalRowSelection !== undefined ? externalRowSelection : internalRowSelection;
+  
+  // Handle row selection changes
+  const handleRowSelectionChange: OnChangeFn<RowSelectionState> = (updaterOrValue) => {
+    // Apply the updater to get the new selection state
+    const newSelection = typeof updaterOrValue === 'function'
+      ? updaterOrValue(rowSelection)
+      : updaterOrValue;
+    
+    // Update external state if callback provided, otherwise update internal state
+    if (onRowSelectionChange) {
+      onRowSelectionChange(newSelection);
+    } else {
+      setInternalRowSelection(newSelection);
+    }
+  };
 
   const table = useReactTable({
     data,
@@ -51,24 +80,41 @@ export function DataTable<TData, TValue>({
     getSortedRowModel: getSortedRowModel(),
     onColumnFiltersChange: setColumnFilters,
     getFilteredRowModel: getFilteredRowModel(),
+    enableRowSelection: enableRowSelection,
+    onRowSelectionChange: handleRowSelectionChange,
+    // Use the 'id' field from each row as the row ID if it exists
+    getRowId: (row: TData) => {
+      const rowWithId = row as { id?: string | number };
+      return rowWithId.id?.toString() || '';
+    },
     state: {
       sorting,
       columnFilters,
+      rowSelection,
     },
   });
 
   return (
     <div>
-      {searchColumn && (
-        <div className="flex items-center py-4">
-          <Input
-            placeholder={searchPlaceholder}
-            value={(table.getColumn(searchColumn)?.getFilterValue() as string) ?? ''}
-            onChange={(event) => table.getColumn(searchColumn)?.setFilterValue(event.target.value)}
-            className="max-w-sm"
-          />
-        </div>
-      )}
+      <div className="flex items-center justify-between py-4">
+        {searchColumn && (
+          <div className="flex items-center">
+            <Input
+              placeholder={searchPlaceholder}
+              value={(table.getColumn(searchColumn)?.getFilterValue() as string) ?? ''}
+              onChange={(event) => table.getColumn(searchColumn)?.setFilterValue(event.target.value)}
+              className="max-w-sm"
+            />
+          </div>
+        )}
+        
+        {/* Show delete button when rows are selected */}
+        {enableRowSelection && Object.keys(rowSelection).length > 0 && onDeleteSelected && (
+          <Button variant="destructive" onClick={onDeleteSelected} className="ml-auto">
+            Delete Selected
+          </Button>
+        )}
+      </div>
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -91,8 +137,15 @@ export function DataTable<TData, TValue>({
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  data-state={row.getIsSelected() && 'selected'}
-                  className={`text-white ${onRowClick ? 'cursor-pointer hover:bg-gray-800' : ''}`}
+                  data-state={row.getIsSelected() ? 'selected' : undefined}
+                  className={`
+                    text-white 
+                    ${onRowClick ? 'cursor-pointer' : ''}
+                    ${!row.getIsSelected() && onRowClick ? 'hover:bg-gray-800' : ''}
+                  `}
+                  style={{
+                    backgroundColor: row.getIsSelected() ? '#374151' : '', // Gray-700 for better contrast with white text
+                  }}
                   onClick={() => onRowClick && onRowClick(row.original)}
                 >
                   {row.getVisibleCells().map((cell) => (
