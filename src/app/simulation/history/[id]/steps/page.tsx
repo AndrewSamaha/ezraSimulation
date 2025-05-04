@@ -9,6 +9,7 @@ import { notFound } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { SimulationStepsTable } from './StepsTable';
 import { Suspense } from 'react';
+import { StepsTableSkeleton } from './StepsTableSkeleton';
 
 export default async function SimulationStepsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -45,8 +46,8 @@ export default async function SimulationStepsPage({ params }: { params: Promise<
             </p>
           </div>
 
-          {/* Simulation Steps Data Table */}
-          <Suspense fallback={<div className="text-white">Loading simulation steps...</div>}>
+          {/* Simulation Steps Data Table with proper loading skeleton */}
+          <Suspense fallback={<StepsTableSkeleton />}>
             <SimulationStepsTable steps={steps} />
           </Suspense>
         </Card>
