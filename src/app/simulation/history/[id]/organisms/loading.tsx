@@ -23,14 +23,14 @@ export default function OrganismsLoading() {
           </h1>
 
           <div className="text-white mb-6 space-y-2">
-            <p className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2">
               <span className="font-medium">Simulation ID:</span>
               <Skeleton className="h-4 w-64 bg-gray-700" />
-            </p>
-            <p className="flex items-center space-x-2">
+            </div>
+            <div className="flex items-center space-x-2">
               <span className="font-medium">Organisms Found:</span>
               <Skeleton className="h-4 w-12 bg-gray-700" />
-            </p>
+            </div>
           </div>
 
           {/* Organisms Skeleton */}

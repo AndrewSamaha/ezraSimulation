@@ -10,120 +10,18 @@ import React, {
   useCallback,
 } from 'react';
 
-import { calculateNextStep } from '@/lib/simulation/main';
-import { createNewNutrience } from '@/lib/simulation/behavior/nutrience';
-import { HERBIVORE_DNA_TEMPLATE, PLANT_DNA_TEMPLATE } from '@/lib/simulation/evolution/organism';
-import { createNewOrganism } from '@/lib/simulation/behavior/organism/new';
+// Import types and state management
+import { SimulationState } from './types';
+import { SimulationAction } from './SimulationAction/types';
+import { simulationReducer } from './simulationReducer';
+import { emptyInitialState } from './initialState';
 
-import { v4 as uuid } from 'uuid';
+// For saving to server
+import { SimulationStep } from '@/lib/simulation/types/SimulationObject';
 
-import {
-  SimulationObject,
-  SimulationStep,
-  PerformanceMetrics,
-} from '@/lib/simulation/types/SimulationObject';
+// Types now imported from './types' and './SimulationAction/types'
 
-// Define the overall simulation state
-export interface SimulationState {
-  id: string;
-  currentStep: number;
-  steps: SimulationStep[];
-  isRunning: boolean;
-  speed: number; // Milliseconds between steps
-  selectedObjectId: string | null; // Track selected object by ID
-  performanceMetrics: PerformanceMetrics;
-  // Save-related state
-  lastSavedStep: number;
-  isSaving: boolean;
-  saveInterval: number; // How many steps to collect before saving
-  saveQueue: number[]; // Queue of steps to save
-  isSimulationSaved: boolean; // Track if simulation has been created on the server
-  serverId?: string; // Server-generated ID, if different from client ID
-  // Internal tracking state
-  _lastAction?: SimulationAction;
-}
-
-// Define available actions for the simulation
-type SimulationAction =
-  | { type: 'START_SIMULATION' }
-  | { type: 'PAUSE_SIMULATION' }
-  | { type: 'RESET_SIMULATION' }
-  | { type: 'NEXT_STEP'; preserveSelection?: boolean }
-  | { type: 'PREVIOUS_STEP' }
-  | { type: 'GO_TO_STEP'; payload: number; preserveSelection?: boolean }
-  | { type: 'SET_SPEED'; payload: number }
-  | { type: 'UPDATE_OBJECT'; payload: SimulationObject }
-  | { type: 'ADD_OBJECT'; payload: SimulationObject }
-  | { type: 'REMOVE_OBJECT'; payload: string }
-  | { type: 'SET_SIMULATION_STATE'; payload: SimulationStep }
-  | { type: 'SELECT_OBJECT'; payload: string | null }
-  | { type: 'INITIALIZE_STATE' }
-  | { type: 'SAVE_STEP_REQUESTED'; payload: number }
-  | { type: 'SAVE_STEP_STARTED'; payload: number }
-  | { type: 'SAVE_STEP_COMPLETED'; payload: number }
-  | { type: 'SAVE_STEP_FAILED'; payload: { step: number; error: string } }
-  | { type: 'SET_SAVE_INTERVAL'; payload: number }
-  | { type: 'TRIGGER_SAVE_NOW' }
-  | { type: 'SIMULATION_SAVED'; payload?: { serverId: string } };
-
-// Empty initial state for server-side rendering
-const emptyInitialState: SimulationState = {
-  id: uuid(),
-  currentStep: 0,
-  steps: [{ objects: [] }],
-  isRunning: false,
-  speed: 100,
-  selectedObjectId: null,
-  performanceMetrics: {
-    lastFrameDuration: 0,
-    frameDurations: [],
-    fps: 0,
-    totalOrganismCalculationTime: 0,
-    organismCalculationTimes: [],
-    avgOrganismCalculationTime: 0,
-    lastUpdateTimestamp: performance.now(),
-  },
-  // Save-related state
-  lastSavedStep: 0,
-  isSaving: false,
-  saveInterval: 100, // Save every 50 steps by default
-  saveQueue: [],
-  isSimulationSaved: false, // Initialize as not saved
-  // serverId will be set when the simulation is first saved
-};
-
-// Function to create the actual initial state (only called on client-side)
-const createInitialState = (): SimulationState => ({
-  id: uuid(),
-  currentStep: 0,
-  steps: [
-    {
-      objects: [
-        ...Array.from({ length: 50 }, () => createNewNutrience()),
-        //createNewOrganism(PLANT_DNA_TEMPLATE),
-        ...Array.from({ length: 25 }, () => createNewOrganism(HERBIVORE_DNA_TEMPLATE)),
-      ],
-    },
-  ],
-  isRunning: false,
-  speed: 100,
-  selectedObjectId: null,
-  performanceMetrics: {
-    lastFrameDuration: 0,
-    frameDurations: [],
-    fps: 0,
-    totalOrganismCalculationTime: 0,
-    organismCalculationTimes: [],
-    avgOrganismCalculationTime: 0,
-    lastUpdateTimestamp: performance.now(),
-  },
-  // Save-related state
-  lastSavedStep: 0,
-  isSaving: false,
-  saveInterval: 100, // Save every 50 steps by default
-  saveQueue: [],
-  isSimulationSaved: false, // Initialize as not saved
-});
+// Empty initial state and createInitialState are now imported from './initialState'
 
 // Save a simulation to the server
 const saveSimulationToServer = async (simulationId: string, name: string = 'New Simulation') => {
@@ -221,290 +119,6 @@ const saveStepToServer = async (
   }
 };
 
-// Reducer function to handle state updates
-const simulationReducer = (state: SimulationState, action: SimulationAction): SimulationState => {
-  // Store the last action for detecting specific actions in effects
-  const newState = { ...state, _lastAction: action };
-  switch (action.type) {
-    case 'SELECT_OBJECT':
-      return {
-        ...newState,
-        selectedObjectId: action.payload,
-      };
-    case 'START_SIMULATION':
-      return { ...state, isRunning: true };
-
-    case 'PAUSE_SIMULATION':
-      return { ...state, isRunning: false };
-
-    case 'RESET_SIMULATION': {
-      // When resetting, we need to create a new simulation with a fresh ID
-      const newState = createInitialState();
-      // Clear any pending saves
-      return {
-        ...newState,
-        saveQueue: [],
-      };
-    }
-
-    case 'SET_SIMULATION_STATE': {
-      return {
-        ...state,
-        steps: [action.payload],
-        currentStep: 0,
-      };
-    }
-
-    case 'NEXT_STEP': {
-      // If we're at the last known step, we need to calculate the next step
-      if (state.currentStep >= state.steps.length - 1) {
-        // Calculate new positions based on vector movement and collisions
-        // using our extracted physics logic
-        const currentStep = state.steps[state.currentStep];
-        const result = calculateNextStep(currentStep);
-        const { step: newStep, metrics } = result;
-
-        // Update performance metrics
-        const now = performance.now();
-        const frameTime = metrics?.frameDuration || 0;
-        const organismCalcTimes = metrics?.organismCalculationTimes || [];
-        const totalOrgCalcTime = organismCalcTimes.reduce((sum, time) => sum + time, 0);
-        const avgOrgCalcTime =
-          organismCalcTimes.length > 0 ? totalOrgCalcTime / organismCalcTimes.length : 0;
-
-        // Calculate FPS based on last frame duration
-        const fps = frameTime > 0 ? 1000 / frameTime : 0;
-
-        // Limit history to last 30 frames
-        const MAX_HISTORY = 30;
-        const frameDurations = [frameTime, ...state.performanceMetrics.frameDurations].slice(
-          0,
-          MAX_HISTORY,
-        );
-
-        const organismCalculationTimes = [
-          ...organismCalcTimes,
-          ...state.performanceMetrics.organismCalculationTimes,
-        ].slice(0, MAX_HISTORY);
-
-        // Check if we need to update the selected object's ID in the new step
-        let updatedSelectedObjectId = state.selectedObjectId;
-
-        // If there was a selected object, make sure it's still available in the new step
-        // and keep following it
-        if (state.selectedObjectId) {
-          // Find the object in the new step that matches the selected object
-          const selectedInPrevStep = currentStep.objects.find(
-            (obj) => obj.id === state.selectedObjectId,
-          );
-          const selectedInNewStep = newStep.objects.find((obj) => {
-            // If we can find the selected object in the new step by ID, use it
-            if (obj.id === state.selectedObjectId) return true;
-
-            // If not, try to find it by parentId (in case it was reproduced/transformed)
-            return selectedInPrevStep && obj.parentId === selectedInPrevStep.id;
-          });
-
-          // Update the selected object ID if found in the new step
-          if (selectedInNewStep) {
-            updatedSelectedObjectId = selectedInNewStep.id;
-          }
-        }
-
-        return {
-          ...state,
-          steps: [...state.steps, newStep],
-          currentStep: state.currentStep + 1,
-          selectedObjectId: updatedSelectedObjectId, // Maintain selection across steps
-          performanceMetrics: {
-            ...state.performanceMetrics,
-            lastFrameDuration: frameTime,
-            frameDurations,
-            fps,
-            totalOrganismCalculationTime: totalOrgCalcTime,
-            organismCalculationTimes,
-            avgOrganismCalculationTime: avgOrgCalcTime,
-            lastUpdateTimestamp: now,
-          },
-        };
-      } else {
-        // Just move to the next pre-calculated step, maintaining the selected object
-        // Check if we need to update the selected object's ID in the next step
-        let updatedSelectedObjectId = state.selectedObjectId;
-
-        // If there was a selected object, make sure it's still available in the next step
-        if (state.selectedObjectId) {
-          const currentStep = state.steps[state.currentStep];
-          const nextStep = state.steps[state.currentStep + 1];
-
-          // Find the object in the next step that matches the selected object
-          const selectedInCurStep = currentStep.objects.find(
-            (obj) => obj.id === state.selectedObjectId,
-          );
-          const selectedInNextStep = nextStep.objects.find((obj) => {
-            // If we can find the selected object in the next step by ID, use it
-            if (obj.id === state.selectedObjectId) return true;
-
-            // If not, try to find it by parentId (in case it was reproduced/transformed)
-            return selectedInCurStep && obj.parentId === selectedInCurStep.id;
-          });
-
-          // Update the selected object ID if found in the next step
-          if (selectedInNextStep) {
-            updatedSelectedObjectId = selectedInNextStep.id;
-          }
-        }
-
-        const newStep = state.currentStep + 1;
-
-        // Check if we need to queue this step for saving
-        const updatedQueue = [...state.saveQueue]; // checked - not it
-        if (newStep - state.lastSavedStep >= state.saveInterval) {
-          // Add this step to the save queue if it's not already there
-          if (!updatedQueue.includes(newStep)) {
-            updatedQueue.push(newStep);
-          }
-        }
-
-        return {
-          ...state,
-          currentStep: newStep,
-          selectedObjectId: updatedSelectedObjectId, // Maintain selection across steps
-          saveQueue: updatedQueue,
-        };
-      }
-    }
-
-    case 'PREVIOUS_STEP':
-      return {
-        ...state,
-        currentStep: Math.max(0, state.currentStep - 1),
-      };
-
-    case 'GO_TO_STEP':
-      return {
-        ...state,
-        currentStep: Math.min(Math.max(0, action.payload), state.steps.length - 1),
-      };
-
-    case 'SET_SPEED':
-      return {
-        ...state,
-        speed: action.payload,
-      };
-
-    case 'UPDATE_OBJECT': {
-      const currentStep = state.steps[state.currentStep];
-      const updatedObjects = currentStep.objects.map((obj) =>
-        obj.id === action.payload.id ? action.payload : obj,
-      );
-
-      const updatedSteps = [...state.steps];
-      updatedSteps[state.currentStep] = {
-        ...currentStep,
-        objects: updatedObjects,
-      };
-
-      // Remove any future steps since we've modified the timeline
-      const newSteps = updatedSteps.slice(0, state.currentStep + 1);
-
-      return {
-        ...state,
-        steps: newSteps,
-      };
-    }
-
-    case 'ADD_OBJECT': {
-      const currentStep = state.steps[state.currentStep];
-      const updatedObjects = [...currentStep.objects, action.payload];
-
-      const updatedSteps = [...state.steps];
-      updatedSteps[state.currentStep] = {
-        ...currentStep,
-        objects: updatedObjects,
-      };
-
-      // Remove any future steps since we've modified the timeline
-      const newSteps = updatedSteps.slice(0, state.currentStep + 1);
-
-      return {
-        ...state,
-        steps: newSteps,
-      };
-    }
-
-    case 'REMOVE_OBJECT': {
-      const currentStep = state.steps[state.currentStep];
-      const updatedObjects = currentStep.objects.filter((obj) => obj.id !== action.payload);
-
-      const updatedSteps = [...state.steps];
-      updatedSteps[state.currentStep] = {
-        ...currentStep,
-        objects: updatedObjects,
-      };
-
-      // Remove any future steps since we've modified the timeline
-      const newSteps = updatedSteps.slice(0, state.currentStep + 1);
-
-      return {
-        ...state,
-        steps: newSteps,
-      };
-    }
-
-    // Save-related actions
-    case 'SAVE_STEP_REQUESTED':
-      console.log(`SAVE_STEP_REQUESTED: Adding step ${action.payload} to save queue`);
-      return {
-        ...state,
-        saveQueue: [...state.saveQueue, action.payload],
-      };
-
-    case 'SAVE_STEP_STARTED':
-      return {
-        ...state,
-        isSaving: true,
-      };
-
-    case 'SAVE_STEP_COMPLETED':
-      return {
-        ...state,
-        isSaving: false,
-        lastSavedStep: Math.max(state.lastSavedStep, action.payload),
-        saveQueue: state.saveQueue.filter((step) => step !== action.payload),
-      };
-
-    case 'SAVE_STEP_FAILED':
-      // We might want to retry later, so keep the step in the queue
-      return {
-        ...state,
-        isSaving: false,
-      };
-
-    case 'SET_SAVE_INTERVAL':
-      return {
-        ...state,
-        saveInterval: action.payload,
-      };
-
-    case 'TRIGGER_SAVE_NOW':
-      // This action only triggers the side effect to save immediately
-      // The actual state changes will happen through SAVE_STEP_STARTED, SAVE_STEP_COMPLETED etc.
-      return newState;
-
-    case 'SIMULATION_SAVED':
-      return {
-        ...state,
-        isSimulationSaved: true,
-        // If a server ID was provided, store it for future API calls
-        ...(action.payload?.serverId ? { serverId: action.payload.serverId } : {}),
-      };
-
-    default:
-      return newState;
-  }
-};
-
 // Create the context
 const SimulationContext = createContext<{
   state: SimulationState;
@@ -512,98 +126,97 @@ const SimulationContext = createContext<{
   isInitialized: boolean;
 }>({
   state: emptyInitialState,
-  dispatch: () => null,
+  dispatch() {
+    throw new Error('dispatch function must be overridden');
+  },
   isInitialized: false,
 });
 
 // Provider component to wrap the app with
 export function SimulationProvider({ children }: { children: ReactNode }) {
-  // Start with empty state for SSR
   const [state, dispatch] = useReducer(simulationReducer, emptyInitialState);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Initialize the simulation only on the client side
+  // Initialize state on client-side only
   useEffect(() => {
-    // Only initialize once
+    // Don't run on server
+    if (typeof window === 'undefined') return;
+
+    // Check if we need to initialize the state
     if (!isInitialized) {
-      dispatch({
-        type: 'SET_SIMULATION_STATE',
-        payload: createInitialState().steps[0],
-      });
+      dispatch({ type: 'INITIALIZE_STATE' });
       setIsInitialized(true);
     }
   }, [isInitialized]);
 
-  // Process the save queue when not saving and queue has items
+  // API call to save a step to the server
   const processSaveQueue = useCallback(async () => {
-    if (state.saveQueue.length === 0 || state.isSaving) return;
+    // Don't run on server
+    if (typeof window === 'undefined') return;
 
-    // Get the next step to save
-    const nextToSave = state.saveQueue[0]; // This is a step number
-    const stepData = state.steps[nextToSave];
+    // Check if we're already saving or if the queue is empty
+    if (state.isSaving || state.saveQueue.length === 0) return;
 
-    // Use the server ID if available, otherwise use the client ID
-    const simulationId = state.serverId || state.id;
-    console.log(`Processing save for step ${nextToSave} using simulation ID: ${simulationId}`);
+    // Get the next step to save from the queue
+    const nextStepToSave = state.saveQueue[0];
+
+    // Mark as saving
+    dispatch({ type: 'SAVE_STEP_STARTED', payload: nextStepToSave });
 
     try {
-      dispatch({ type: 'SAVE_STEP_STARTED', payload: nextToSave });
+      // If the step number is valid
+      if (nextStepToSave < state.steps.length) {
+        // Get the step data
+        const stepData = state.steps[nextStepToSave];
 
-      // Pass the simulation saved state to saveStepToServer
-      const result = await saveStepToServer(
-        simulationId,
-        nextToSave,
-        stepData,
-        state.isSimulationSaved,
-      );
-
-      // If this was the first successful save, mark the simulation as saved
-      if (!state.isSimulationSaved) {
-        // If server returned a different ID, store it
-        if (result && result.simulationId && result.simulationId !== simulationId) {
-          console.log(`Storing server-generated ID: ${result.simulationId}`);
-          dispatch({
-            type: 'SIMULATION_SAVED',
-            payload: { serverId: result.simulationId },
-          });
-        } else {
-          dispatch({ type: 'SIMULATION_SAVED' });
+        // Save the simulation if it's not already saved
+        if (!state.isSimulationSaved) {
+          // First create the simulation
+          const simulation = await saveSimulationToServer(state.id);
+          // Extract just the ID from the server response
+          const serverId = simulation.id;
+          dispatch({ type: 'SIMULATION_SAVED', payload: { serverId } });
         }
+
+        // Use the server ID if available, otherwise use the client ID
+        const simulationId = state.serverId || state.id;
+
+        // Save the step
+        await saveStepToServer(simulationId, nextStepToSave, stepData, state.isSimulationSaved);
+
+        // Mark as saved
+        dispatch({ type: 'SAVE_STEP_COMPLETED', payload: nextStepToSave });
+
+        console.log(`Step ${nextStepToSave} saved successfully`);
+
+        // Check if there are more steps to save
+        if (state.saveQueue.length > 1) {
+          // Process the next step in the queue after a short delay
+          setTimeout(() => void processSaveQueue(), 100);
+        }
+      } else {
+        // Invalid step number
+        dispatch({
+          type: 'SAVE_STEP_FAILED',
+          payload: { step: nextStepToSave, error: 'Invalid step number' },
+        });
       }
-
-      dispatch({ type: 'SAVE_STEP_COMPLETED', payload: nextToSave });
-
-      // Store in localStorage that this simulation was saved up to this step
-      localStorage.setItem(`simulation_${state.id}_lastSaved`, nextToSave.toString());
     } catch (error) {
-      console.error('Failed to save step:', error);
+      console.error('Error saving step:', error);
       dispatch({
         type: 'SAVE_STEP_FAILED',
-        payload: {
-          step: nextToSave,
-          error: error instanceof Error ? error.message : 'Unknown error',
-        },
+        payload: { step: nextStepToSave, error: String(error) },
       });
     }
   }, [
     state.saveQueue,
     state.isSaving,
-    state.id,
     state.steps,
     state.isSimulationSaved,
+    state.id,
     state.serverId,
     dispatch,
   ]);
-
-  // Process the save queue when not saving and queue has items
-  // useEffect(() => {
-  //   // Don't run on server
-  //   if (typeof window === 'undefined') return;
-
-  //   if (state.saveQueue.length > 0 && !state.isSaving) {
-  //     processSaveQueue();
-  //   }
-  // }, [state.saveQueue, state.isSaving, state.id, state.isSimulationSaved, processSaveQueue]);
 
   // Handle manual save trigger
   const handleManualSave = useCallback(() => {
@@ -692,7 +305,7 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
         }
       }
     }
-  }, [isInitialized, state.id]);
+  }, [isInitialized, state.id, dispatch]);
 
   return (
     <SimulationContext.Provider value={{ state, dispatch, isInitialized }}>
