@@ -21,4 +21,5 @@ export interface SimulationState {
   serverId?: string; // Server-generated ID, if different from client ID
   // Internal tracking state
   _lastAction?: SimulationAction;
+  _stepOffset?: number; // Tracks how many steps have been trimmed from the beginning
 }

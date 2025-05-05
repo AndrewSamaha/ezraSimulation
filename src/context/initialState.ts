@@ -30,6 +30,7 @@ export const emptyInitialState: SimulationState = {
   saveQueue: [],
   isSimulationSaved: false, // Initialize as not saved
   // serverId will be set when the simulation is first saved
+  _stepOffset: 0,
 };
 
 // Function to create the actual initial state (only called on client-side)
@@ -63,4 +64,5 @@ export const createInitialState = (): SimulationState => ({
   saveInterval: 100, // Save every 100 steps by default
   saveQueue: [],
   isSimulationSaved: false, // Initialize as not saved
+  _stepOffset: 0,
 });

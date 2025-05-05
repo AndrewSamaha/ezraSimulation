@@ -132,6 +132,12 @@ const SimulationContext = createContext<{
   isInitialized: false,
 });
 
+// Helper function to get step data by absolute step number, accounting for the offset
+export function getStepByAbsoluteNumber(state: SimulationState, absoluteStepNumber: number): SimulationStep | undefined {
+  const stepIndex = absoluteStepNumber - (state._stepOffset || 0);
+  return stepIndex >= 0 && stepIndex < state.steps.length ? state.steps[stepIndex] : undefined;
+}
+
 // Provider component to wrap the app with
 export function SimulationProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(simulationReducer, emptyInitialState);
@@ -151,37 +157,37 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
 
   // API call to save a step to the server
   const processSaveQueue = useCallback(async () => {
-    // Don't run on server
-    if (typeof window === 'undefined') return;
+    if (state.saveQueue.length === 0 || state.isSaving) {
+      return;
+    }
 
-    // Check if we're already saving or if the queue is empty
-    if (state.isSaving || state.saveQueue.length === 0) return;
-
-    // Get the next step to save from the queue
     const nextStepToSave = state.saveQueue[0];
-
-    // Mark as saving
     dispatch({ type: 'SAVE_STEP_STARTED', payload: nextStepToSave });
 
     try {
-      // If the step number is valid
-      if (nextStepToSave < state.steps.length) {
-        // Get the step data
-        const stepData = state.steps[nextStepToSave];
-
+      // Get the step data using the helper function to account for any offset
+      const stepData = getStepByAbsoluteNumber(state, nextStepToSave);
+      
+      // Check if the step data exists
+      if (stepData) {
+        console.log(`Processing step ${nextStepToSave} from save queue`);
+        
         // Save the simulation if it's not already saved
         if (!state.isSimulationSaved) {
-          // First create the simulation
-          const simulation = await saveSimulationToServer(state.id);
-          // Extract just the ID from the server response
-          const serverId = simulation.id;
-          dispatch({ type: 'SIMULATION_SAVED', payload: { serverId } });
+          try {
+            console.log(`First saving simulation ${state.id} to server`);
+            await saveSimulationToServer(state.id);
+            dispatch({ type: 'SIMULATION_SAVED' });
+          } catch (error) {
+            console.error('Error saving simulation:', error);
+            throw error; // Re-throw to be caught by outer catch
+          }
         }
 
-        // Use the server ID if available, otherwise use the client ID
+        // Now save the step
+        console.log(`Saving step ${nextStepToSave} to server...`);
+        // Use serverId if available, otherwise use client ID
         const simulationId = state.serverId || state.id;
-
-        // Save the step
         await saveStepToServer(simulationId, nextStepToSave, stepData, state.isSimulationSaved);
 
         // Mark as saved
@@ -209,12 +215,7 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
       });
     }
   }, [
-    state.saveQueue,
-    state.isSaving,
-    state.steps,
-    state.isSimulationSaved,
-    state.id,
-    state.serverId,
+    state,
     dispatch,
   ]);
 
@@ -225,7 +226,9 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
     for (let i = state.lastSavedStep + 1; i <= state.currentStep; i++) {
       if (!state.saveQueue.includes(i)) {
         // Check if the step number is already in the queue
-        if (i < state.steps.length) {
+        // Use the helper function to get step data by absolute number
+      const stepData = getStepByAbsoluteNumber(state, i);
+      if (stepData) {
           unsavedSteps.push(i); // Just push the step number
         }
       }
@@ -238,7 +241,7 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'SAVE_STEP_REQUESTED', payload: stepNumber });
       }
     }
-  }, [state.lastSavedStep, state.currentStep, state.saveQueue, state.steps, dispatch]);
+  }, [state, dispatch]);
 
   // Watch for the TRIGGER_SAVE_NOW action
   useEffect(() => {
@@ -266,7 +269,9 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
       if (stepsSinceLastSave >= state.saveInterval) {
         // Add the current step to the save queue if not already there
         if (!state.saveQueue.includes(state.currentStep)) {
-          if (state.currentStep < state.steps.length) {
+          // Use the helper function to get step data by absolute number
+          const stepData = getStepByAbsoluteNumber(state, state.currentStep);
+          if (stepData) {
             console.log(
               `Auto-saving step ${state.currentStep} (${stepsSinceLastSave} steps since last save)`,
             );
@@ -280,12 +285,7 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
     }
   }, [
     isInitialized,
-    state.currentStep,
-    state.lastSavedStep,
-    state.saveInterval,
-    state.isSaving,
-    state.saveQueue,
-    state.steps,
+    state,
     dispatch,
   ]);
 
