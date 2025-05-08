@@ -3,7 +3,8 @@
 import { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Play, Pause, RotateCcw, ChevronRight } from 'lucide-react';
-import { useSimulation, SimulationObject as SimObj } from '@/context/SimulationContext';
+import { useSimulation, getStepByAbsoluteNumber } from '@/context/SimulationContext';
+import type { SimulationObject as SimObj } from '@/lib/simulation/types/SimulationObject';
 import { SimulationObject } from '@/components/SimulationObject';
 import { CONTAINER_WIDTH, CONTAINER_HEIGHT } from '@/lib/constants/world';
 import { Card } from '@/components/ui/card';
@@ -16,10 +17,12 @@ export default function SimulationPage() {
   const containerRef = useRef<HTMLDivElement>(null);
   const intervalRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
+  // Get the current step data using helper function to handle step offset
+  const currentStepData = getStepByAbsoluteNumber(state, state.currentStep);
+  
   // Get the currently selected object
-  const selectedObject = state.selectedObjectId
-    ? state.steps[state.currentStep].objects.find((obj) => obj.id === state.selectedObjectId) ||
-      null
+  const selectedObject = state.selectedObjectId && currentStepData
+    ? currentStepData.objects.find((obj) => obj.id === state.selectedObjectId) || null
     : null;
 
   // Handle closing the drawer - only used for the close button in the drawer
@@ -47,7 +50,8 @@ export default function SimulationPage() {
       dispatch({ type: 'START_SIMULATION' });
 
       // Set velocity for the circle
-      const mainCircle = state.steps[state.currentStep].objects.find(
+      const currentStepData = getStepByAbsoluteNumber(state, state.currentStep);
+      const mainCircle = currentStepData?.objects.find(
         (obj) => obj.id === 'circle-2',
       );
       if (mainCircle) {
@@ -99,34 +103,7 @@ export default function SimulationPage() {
     dispatch({ type: 'RESET_SIMULATION' });
   };
 
-  // Special step button handler that preserves drawer state
-  const stepSimulation = (e: React.MouseEvent) => {
-    if (!state.isRunning) {
-      // CRITICAL: Completely stop event propagation
-      e.stopPropagation();
-      e.nativeEvent.stopImmediatePropagation();
-      e.preventDefault();
-
-      // We're going to manually handle a step while preserving selection
-      const nextStep = state.currentStep + 1;
-
-      // If we need to calculate a new step
-      if (nextStep >= state.steps.length) {
-        // Dispatch the next step action with a flag to preserve selection
-        dispatch({
-          type: 'NEXT_STEP',
-          preserveSelection: true, // Custom flag to tell reducer to keep selection
-        });
-      } else {
-        // For pre-calculated steps, we need to manually advance while keeping selection
-        dispatch({
-          type: 'GO_TO_STEP',
-          payload: nextStep,
-          preserveSelection: true, // Custom flag to tell reducer to keep selection
-        });
-      }
-    }
-  };
+  // Removed unused stepSimulation function as it's not being called anywhere
 
   // Cleanup on unmount
   useEffect(() => {
@@ -165,21 +142,24 @@ export default function SimulationPage() {
           }}
         >
           {/* Only render simulation objects when client-side initialization is complete */}
-          {isInitialized &&
-            state.steps[state.currentStep].objects.map((obj) => (
-              <SimulationObject key={obj.id} object={obj} />
+          {isInitialized && currentStepData && 
+            currentStepData.objects.map((obj) => (
+              <SimulationObject
+                key={obj.id}
+                object={obj}
+                // onClick and isSelected are handled by container click events
+              />
             ))}
-
           {/* Show loading state while initializing */}
           {!isInitialized && (
-            <div className="absolute inset-0 flex items-center justify-center text-white">
-              <span className="animate-pulse">Initializing simulation...</span>
+            <div className='absolute inset-0 flex items-center justify-center'>
+              <div className='text-lg font-medium'>Loading simulation...</div>
             </div>
           )}
         </Card>
 
         <div
-          className="fixed top-5 flex gap-2.5 bg-black/40 p-2 px-4 rounded"
+          className='fixed top-5 flex gap-2.5 bg-black/40 p-2 px-4 rounded'
           style={{
             left: '50%',
             transform: `translateX(-50%) ${selectedObject ? 'translateX(-80px)' : ''}`,
@@ -274,9 +254,9 @@ export default function SimulationPage() {
           }}
         >
           <div>
-            Step: {state.currentStep} / {state.steps.length - 1}
+            Step: {state.currentStep} / {state.currentStep - (state._stepOffset || 0) + (currentStepData ? currentStepData.objects.length - 1 : 0)}
           </div>
-          <div>Objects: {state.steps[state.currentStep].objects.length}</div>
+          <div>Objects: {currentStepData ? currentStepData.objects.length : 0}</div>
 
           {/* Save Status Indicator */}
           <div className="mt-2">
@@ -301,7 +281,7 @@ export default function SimulationPage() {
         isOpen={!!selectedObject}
         onClose={handleCloseDrawer}
         selectedObject={selectedObject}
-        allObjects={state.steps[state.currentStep].objects}
+        allObjects={currentStepData ? currentStepData.objects : []}
         dispatch={dispatch}
       />
 

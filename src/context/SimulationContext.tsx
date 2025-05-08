@@ -176,8 +176,19 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
         if (!state.isSimulationSaved) {
           try {
             console.log(`First saving simulation ${state.id} to server`);
-            await saveSimulationToServer(state.id);
-            dispatch({ type: 'SIMULATION_SAVED' });
+            // Get the saved simulation with server ID
+            const savedSimulation = await saveSimulationToServer(state.id);
+            
+            // Extract the server ID from the response
+            const serverId = savedSimulation.id;
+            
+            // Update state with server ID
+            dispatch({ 
+              type: 'SIMULATION_SAVED', 
+              payload: { serverId }, 
+            });
+            
+            console.log(`Simulation saved with server ID: ${serverId}`);
           } catch (error) {
             console.error('Error saving simulation:', error);
             throw error; // Re-throw to be caught by outer catch
@@ -186,9 +197,23 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
 
         // Now save the step
         console.log(`Saving step ${nextStepToSave} to server...`);
+        
         // Use serverId if available, otherwise use client ID
         const simulationId = state.serverId || state.id;
-        await saveStepToServer(simulationId, nextStepToSave, stepData, state.isSimulationSaved);
+        console.log(`Using simulation ID for step save: ${simulationId}`);
+        
+        // At this point state.isSimulationSaved should be true if we just saved the simulation
+        const result = await saveStepToServer(simulationId, nextStepToSave, stepData, state.isSimulationSaved);
+        
+        // If the saveStepToServer returned a different simulation ID (which can happen on first save),
+        // make sure we update our state
+        if (result.simulationId && result.simulationId !== simulationId) {
+          console.log(`Step save returned a different simulation ID: ${result.simulationId}`);
+          dispatch({ 
+            type: 'SIMULATION_SAVED', 
+            payload: { serverId: result.simulationId },
+          });
+        }
 
         // Mark as saved
         dispatch({ type: 'SAVE_STEP_COMPLETED', payload: nextStepToSave });
@@ -305,7 +330,7 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
         }
       }
     }
-  }, [isInitialized, state.id, dispatch]);
+  }, [isInitialized, state.id, state.lastSavedStep, dispatch]);
 
   return (
     <SimulationContext.Provider value={{ state, dispatch, isInitialized }}>
