@@ -7,7 +7,7 @@ import { CONTAINER_WIDTH, CONTAINER_HEIGHT } from '@/lib/constants/world';
 const MAX_NUTRIENCE = 50;
 
 export const createNewNutrience = (parent?: SimulationObject): SimulationObject => {
-  if (!parent) {
+  if (true || !parent) {
     return {
       id: uuid(),
       objectType: ObjectTypeEnum.NUTRIENCE,
@@ -21,6 +21,7 @@ export const createNewNutrience = (parent?: SimulationObject): SimulationObject 
       energy: 100,
       actionHistory: [],
       workingMemory: [],
+      generation: 0,
     };
   }
 
@@ -45,6 +46,7 @@ export const createNewNutrience = (parent?: SimulationObject): SimulationObject 
     energy: 100,
     actionHistory: [],
     workingMemory: [],
+    generation: 0,
   };
 };
 

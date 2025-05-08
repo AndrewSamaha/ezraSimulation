@@ -13,7 +13,7 @@ export type ObjectType = (typeof ObjectTypes)[number];
 export interface ActionHistoryItem {
   action: ActionType;
   stepNumber: number;
-  ref: { [key: string]: string | number };
+  ref: string; //{ [key: string]: string | number };
 }
 
 export interface SimulationObject {
