@@ -153,8 +153,8 @@ export const HERBIVORE_DNA_TEMPLATE: DNA = {
 export const mutateDNA = (
   dna: DNA,
   mutationRate: number,
-  mutationMagnitude: number = 0.2,
-  copyGeneRate: number = 0.1,
+  mutationMagnitude: number,
+  copyGeneRate: number,
 ): DNA => {
   // Create a deep copy to avoid modifying the original
   if (dna === undefined) {

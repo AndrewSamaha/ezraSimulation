@@ -1,7 +1,12 @@
 import { DNA, mutateDNA, isDNA } from '@/lib/simulation/evolution/organism';
 import { SimulationObject, ObjectTypeEnum } from '@/lib/simulation/types/SimulationObject';
 import { expressGene } from '@/lib/simulation/evolution/organism';
-import { MUTATION_RATE, DEFAULT_ENERGY_GIFT } from './constants';
+import {
+  MUTATION_RATE,
+  MUTATION_MAGNITUDE,
+  COPY_GENE_RATE,
+  DEFAULT_ENERGY_GIFT,
+} from './constants';
 import { v4 as uuid } from 'uuid';
 import Victor from 'victor';
 import { CONTAINER_WIDTH, CONTAINER_HEIGHT } from '@/lib/constants/world';
@@ -9,6 +14,8 @@ import { CONTAINER_WIDTH, CONTAINER_HEIGHT } from '@/lib/constants/world';
 export const createNewOrganism = (
   sampleSource: DNA | SimulationObject,
   mutationRate: number = MUTATION_RATE,
+  mutationMagnitude: number = MUTATION_MAGNITUDE,
+  copyGeneRate: number = COPY_GENE_RATE,
 ): SimulationObject => {
   const sampleDNA: DNA = isDNA(sampleSource)
     ? sampleSource
@@ -17,7 +24,7 @@ export const createNewOrganism = (
   const forceInput = new Victor(Math.random() * 20 - 10, Math.random() * 20 - 10).multiply(
     new Victor(0.2, 0.2),
   );
-  const dna = mutateDNA(sampleDNA, mutationRate);
+  const dna = mutateDNA(sampleDNA, mutationRate, mutationMagnitude, copyGeneRate);
   const energy = isDNA(sampleSource)
     ? DEFAULT_ENERGY_GIFT
     : (sampleSource as SimulationObject).energy * expressGene(dna, 'energyGiftToOffspring');
