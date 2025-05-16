@@ -4,7 +4,7 @@ import { SimulationObject, ObjectTypeEnum } from '@/lib/simulation/types/Simulat
 import { ActionTypeEnum } from '@/lib/simulation/behavior/actions';
 import { calcForceFromObjectArray } from './force';
 import { getRandomObjectSample } from './sample';
-import { shouldReproduce } from './reproduce';
+import { shouldReproduce, numBabiesToMake } from './reproduce';
 import { shouldDie } from './die';
 import { getNewWorkingMemory } from './memory';
 import { createNewOrganism } from './new';
@@ -94,38 +94,41 @@ export function doOrganismThings(
   // IMPORTANT: Use the updated object instead of the original
   const currentObj = returnArray.find((o) => o.id === obj.id) || obj;
 
-  if (shouldReproduce(currentObj, allObjects)) {
-    // Create new organism with a completely independent set of vectors
-    const newOrganism = createNewOrganism(currentObj);
-    const lostEnergy = newOrganism.energy;
+  const numBabies = numBabiesToMake(currentObj, allObjects);
+  if (numBabies > 0) {
+    for (let i = 0; i < numBabies; i++) {
+      // Create new organism with a completely independent set of vectors
+      const newOrganism = createNewOrganism(currentObj);
+      const lostEnergy = newOrganism.energy;
 
-    // Create a new updated object with reduced energy and updated action history
-    // instead of modifying the original
-    const updatedAfterReproduction = {
-      ...currentObj,
-      energy: currentObj.energy - lostEnergy,
-      actionHistory: [
-        {
-          action: ActionTypeEnum.REPRODUCE,
-          stepNumber: currentObj.actionHistory.length,
-          ref: newOrganism.id,
-        },
-        ...currentObj.actionHistory,
-      ],
-      // Make sure we clone these vectors to avoid any reference issues
-      vector: currentObj.vector.clone(),
-      velocity: currentObj.velocity.clone(),
-      forceInput: currentObj.forceInput.clone(),
-    };
+      // Create a new updated object with reduced energy and updated action history
+      // instead of modifying the original
+      const updatedAfterReproduction = {
+        ...currentObj,
+        energy: currentObj.energy - lostEnergy,
+        actionHistory: [
+          {
+            action: ActionTypeEnum.REPRODUCE,
+            stepNumber: currentObj.actionHistory.length,
+            ref: newOrganism.id,
+          },
+          ...currentObj.actionHistory,
+        ],
+        // Make sure we clone these vectors to avoid any reference issues
+        vector: currentObj.vector.clone(),
+        velocity: currentObj.velocity.clone(),
+        forceInput: currentObj.forceInput.clone(),
+      };
 
-    // Replace the current object in the return array
-    const currentIndex = returnArray.indexOf(currentObj);
-    if (currentIndex !== -1) {
-      returnArray[currentIndex] = updatedAfterReproduction;
+      // Replace the current object in the return array
+      const currentIndex = returnArray.indexOf(currentObj);
+      if (currentIndex !== -1) {
+        returnArray[currentIndex] = updatedAfterReproduction;
+      }
+
+      // Add the new organism to the return array
+      returnArray.push(newOrganism);
     }
-
-    // Add the new organism to the return array
-    returnArray.push(newOrganism);
   }
 
   // Calculate duration before final return
